@@ -30,7 +30,7 @@
           var force = d3.layout.force()
               .charge(-120)
               .linkDistance(100)
-              .size([800, 600]);
+              .size([$(window).innerWidth(), $(window).innerHeight()]);
           $(window).on('resize', function() {
               force.size([$('svg').width(), $('svg').height()]);
           });
