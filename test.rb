@@ -1,3 +1,5 @@
+require 'json'
+
 DICT_DIR = './dict'
 POS_LIST = [:noun, :verb, :adj, :adv]
 
@@ -35,3 +37,19 @@ POS_LIST.map {|pos| "data.#{pos}"}.each {|fn|
     }
   }
 }
+
+output = {nodes: [], links: []}
+
+word_to_index = Hash.new
+
+data.values.first(1000).each do |entry|
+  entry.word_and_lex_ids.each {|word, _|
+    if !word_to_index.has_key?(word)
+      word_to_index[word] = output[:nodes].size
+      output[:nodes].push({name: word})
+    end
+  }
+  entry.word_and_lex_ids.map {|word, _| word_to_index[word] }.combination(2) {|i, j| output[:links] << {source: i, target: j, value: 1} }
+end
+
+puts(JSON.generate(output))
