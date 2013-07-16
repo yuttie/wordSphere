@@ -52,8 +52,7 @@
                   .enter().append("g")
                   .attr("id", function(d) { return d.name; })
                   .attr("class", "node")
-                  .attr("transform", function(d) { return "translate(" + d.x + ", " + d.y + ")"; })
-                  .call(force.drag);
+                  .attr("transform", function(d) { return "translate(" + d.x + ", " + d.y + ")"; });
 
               node.append("circle")
                   .attr("r", 5)
