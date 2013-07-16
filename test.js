@@ -149,6 +149,10 @@ $(function() {
         update(r.graph);
     });
 
+    $(document).on("keydown", function(e) {
+        $("#query").focus();
+    });
+
     $("#query").on("input", function(e) {
         var query = $(this).val();
         var r = extract_graph(synsets, query, 50);
