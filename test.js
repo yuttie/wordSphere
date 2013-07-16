@@ -1,39 +1,23 @@
-function reconstruct_links(graph) {
-    $.each(graph.nodes, function(i, node) {
-        node.index = i;
-    });
-    $.each(graph.links, function(i, link) {
-        link.source = graph.nodes[typeof(link.source) === "number" ? link.source : link.source.index];
-        link.target = graph.nodes[typeof(link.target) === "number" ? link.target : link.target.index];
-    });
-}
-
-function index_words(graph) {
-    var indices = {};
-    $.each(graph.nodes, function(i, n) { indices[n.word] = i; });
-    return indices;
-}
-
-function calculate_neighbors(graph) {
-    var neighbors = [];
-    $.each(graph.links, function(i, link) {
-        neighbors[link.source.index] = neighbors[link.source.index] || [];
-        neighbors[link.target.index] = neighbors[link.target.index] || [];
-
-        neighbors[link.source.index].push(link.target.index);
-        neighbors[link.target.index].push(link.source.index);
-    });
-    return neighbors;
-}
-
-function extract_words(graph) {
-    var words = [];
-    $.each(graph.nodes, function(i, n) {
-        if (n.word) {
-            words.push(n.word);
+function extract_graph(synsets, query, max_synsets) {
+    var re = new RegExp(query, "i");
+    var count_synsets = 0;
+    var graph = { nodes: [], links: [] };
+    for (var i = 0; i < synsets.length; ++i) {
+        var synset = synsets[i];
+        var matched = synset.words.some(function(w) { return re.exec(w); });
+        if (matched) {
+            count_synsets += 1;
+            var synset_node = { id: "synset:" + i, synset_id: i, gloss: synset.gloss };
+            var word_nodes = synset.words.map(function(w) { return { id: w, word: w }; });
+            var links = word_nodes.map(function(n) { return { source: synset_node, target: n }; });
+            graph.nodes = graph.nodes.concat(synset_node, word_nodes);
+            graph.links = graph.links.concat(links);
+            if (count_synsets == max_synsets) {
+                break;
+            }
         }
-    });
-    return words;
+    }
+    return graph;
 }
 
 $(function() {
@@ -50,45 +34,6 @@ $(function() {
     var scrollX = 0;
     var scrollY = 0;
     var svg = d3.select("body svg");
-
-    var graph_original = null;
-    var word_indices = null;
-    var neighbors = null;
-    var words = null;
-    function narrow_graph_by_words(graph, words) {
-        var to_be_shown = {};
-        var stack = words.map(function(w) { return word_indices[w]; });
-        while (stack.length > 0) {
-            var ni = stack.pop();
-            to_be_shown[ni] = true;
-            $.each(neighbors[ni], function(i, nni) {
-                if (!to_be_shown[nni]) {
-                    stack.push(nni);
-                }
-            });
-        }
-
-        return {
-            links: graph.links.filter(function(l) { return to_be_shown[l.source.index] || to_be_shown[l.target.index]; }),
-            nodes: graph.nodes.filter(function(n) { return to_be_shown[n.index]; })
-        };
-    }
-
-    function narrow_graph_randomly(graph, p) {
-        var to_be_shown = graph.nodes.map(function(n) { return !n.word && Math.random() < p; });
-        $.each(graph.nodes, function(i, n) {
-            if (!n.word && to_be_shown[i]) {
-                $.each(neighbors[i], function(_, j) {
-                    to_be_shown[j] = true;
-                });
-            }
-        });
-
-        return {
-            links: graph.links.filter(function(l) { return to_be_shown[l.source.index] && to_be_shown[l.target.index]; }),
-            nodes: graph.nodes.filter(function(n) { return to_be_shown[n.index]; })
-        };
-    }
 
     function update(graph) {
         force
@@ -156,30 +101,18 @@ $(function() {
         });
     }
 
-    d3.json("test.json", function(error, graph) {
-        graph_original = graph;
-        reconstruct_links(graph_original);
-        word_indices = index_words(graph_original);
-        neighbors = calculate_neighbors(graph_original);
-        words = extract_words(graph_original);
+    var synsets = null;
+    d3.json("test.json", function(error, data) {
+        synsets = data;
 
-        graph = $.extend(true, {}, graph_original);
-        reconstruct_links(graph);
+        var graph = extract_graph(synsets, "", 100);
 
-        update({nodes: [], links: []});
+        update(graph);
     });
 
     $("#query").on("keypress", function(e) {
-        if (e.which === 13) {
-            var graph = $.extend(true, {}, graph_original);
-            reconstruct_links(graph);
-
-            var q = $(this).val();
-            var re = new RegExp(q, "i");
-            var matching_words = words.filter(function(w) { return re.exec(w); });
-
-            graph = narrow_graph_by_words(graph, matching_words);
-            update(graph);
-        }
+        var query = $(this).val();
+        var graph = extract_graph(synsets, query, 100);
+        update(graph);
     });
 });
