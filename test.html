@@ -22,6 +22,7 @@
     </style>
   </head>
   <body>
+    <svg></svg>
     <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
     <script>
@@ -39,7 +40,7 @@
           });
           var scrollX = 0;
           var scrollY = 0;
-          var svg = d3.select("body").append("svg");
+          var svg = d3.select("body svg");
 
           function reconstruct_links(graph) {
               $.each(graph.nodes, function(i, node) {
