@@ -40,20 +40,8 @@ POS_LIST.each {|pos|
   }
 }
 
-output = {nodes: [], links: []}
-
-word_to_index = Hash.new
-
-data.values.first(1000).each_with_index do |entry, i|
-  synset_node_id = output[:nodes].size
-  output[:nodes].push({word: nil, synset_id: i})
-  entry.word_and_lex_ids.each {|word, _|
-    if !word_to_index.has_key?(word)
-      word_to_index[word] = output[:nodes].size
-      output[:nodes].push({word: word})
-    end
-    output[:links] << {source: synset_node_id, target: word_to_index[word]}
-  }
-end
+output = data.values.map {|entry|
+  { words: entry.word_and_lex_ids.map {|word, _| word }, gloss: entry.gloss }
+}
 
 puts(JSON.generate(output))
