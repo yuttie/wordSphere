@@ -80,7 +80,9 @@ $(function() {
             .data(graph.nodes, function(d) { return d.id; });
         node
             .enter().append("g")
-            .attr("class", "node");
+            .attr("class", "node")
+            .call(force.drag)
+            .call(function(n) { n.on("mousedown", function() { d3.event.stopPropagation(); }); });
         node
             .exit().remove();
 
