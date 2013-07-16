@@ -126,14 +126,14 @@ $(function() {
     d3.json("test.json", function(error, data) {
         synsets = data;
 
-        var graph = extract_graph(synsets, "", 100);
+        var graph = extract_graph(synsets, "", 50);
 
         update(graph);
     });
 
     $("#query").on("input", function(e) {
         var query = $(this).val();
-        var graph = extract_graph(synsets, query, 100);
+        var graph = extract_graph(synsets, query, 50);
         update(graph);
     });
 });
