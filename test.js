@@ -166,10 +166,7 @@ $(function() {
         graph = $.extend(true, {}, graph_original);
         reconstruct_links(graph);
 
-        while (graph.nodes.length > 500) {
-            graph = narrow_graph_randomly(graph, 0.8);
-        }
-        update(graph);
+        update({nodes: [], links: []});
     });
 
     $("#query").on("input", function(e) {
