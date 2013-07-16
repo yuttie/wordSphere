@@ -156,6 +156,7 @@ $(function() {
         }
         update(r.graph);
     });
+
     $(document).on('wheel mousewheel DOMMouseScroll', function(e) {
         var delta =   e.originalEvent.deltaY       // 'wheel' event
                   || -e.originalEvent.wheelDeltaY  // Webkit's mousewheel event
