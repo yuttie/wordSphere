@@ -60,7 +60,7 @@ $(function() {
             .links(graph.links)
             .start();
         var link = svg.selectAll(".link")
-            .data(graph.links);
+            .data(graph.links, function(d) { return d.id; });
         link
             .enter().append("line")
             .attr("class", "link");
@@ -68,7 +68,7 @@ $(function() {
             .exit().remove();
 
         var node = svg.selectAll(".node")
-            .data(graph.nodes);
+            .data(graph.nodes, function(d) { return d.id; });
         node
             .enter().append("g")
             .attr("class", "node");
