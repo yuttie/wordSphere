@@ -19,10 +19,27 @@
           stroke: #888;
           stroke-width: 2px;
       }
+      #control-box {
+          position: absolute;
+          bottom: 0;
+          right: 0;
+          margin: 0;
+          padding: 0.25em 0.5em;
+          background: transparent;
+      }
+      #query {
+          background: rgba(255, 255, 255, 0.7);
+          font-size: 1.5em;
+          border: 1px solid gray;
+          padding: 0.2em 0.5em;
+      }
     </style>
   </head>
   <body>
     <svg></svg>
+    <div id="control-box">
+      <label><input type="text" id="query" autofocus="autofocus" placeholder="Word to search for..." /></label>
+    </div>
     <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
     <script>
@@ -114,21 +131,30 @@
                   .links(graph.links)
                   .start();
               var link = svg.selectAll(".link")
-                  .data(graph.links)
+                  .data(graph.links);
+              link
                   .enter().append("line")
                   .attr("class", "link");
+              link
+                  .exit().remove();
+
               var node = svg.selectAll(".node")
-                  .data(graph.nodes)
+                  .data(graph.nodes);
+              var node_enter = node
                   .enter().append("g")
                   .attr("class", "node");
+              node
+                  .exit().remove();
 
-              node.append("circle")
+              node_enter.append("circle")
                   .attr("r", function(d) { return d.name ? 5 : 10; })
                   .style("fill", function(d) { return d.name ? "gray" : color(d.synset_id); });
 
-              node.append("text")
+              node_enter.append("text")
                   .text(function(d) { return d.name || ""; });
 
+              node = svg.selectAll(".node");
+              link = svg.selectAll(".link");
               force.on("tick", function() {
                   link.attr("x1", function(d) { return scrollX + d.source.x; })
                       .attr("y1", function(d) { return scrollY + d.source.y; })
@@ -169,11 +195,32 @@
           }
 
           d3.json("test.json", function(error, graph) {
-              reconstruct_links(graph);
-              word_indices = index_words(graph);
-              neighbors = calculate_neighbors(graph);
               graph_original = graph;
-              update(narrow_graph_randomly(0.0001, graph_original));
+              reconstruct_links(graph_original);
+              word_indices = index_words(graph_original);
+              neighbors = calculate_neighbors(graph_original);
+
+              graph = $.extend(true, {}, graph_original);
+              reconstruct_links(graph);
+
+              while (graph.nodes.length > 500) {
+                  graph = narrow_graph_randomly(0.8, graph);
+              }
+              update(graph);
+          });
+          $("#query").on("input", function(e) {
+              var graph = $.extend(true, {}, graph_original);
+              reconstruct_links(graph);
+
+              var q = $(this).val();
+              var re = new RegExp(q, "i");
+              var words = graph_original.nodes.filter(function(n) { return n.name && re.exec(n.name); }).map(function(n) { return n.name; });
+
+              graph = narrow_graph_by_words(words, graph);
+              while (graph.nodes.length > 500) {
+                  graph = narrow_graph_randomly(0.8, graph);
+              }
+              update(graph);
           });
       });
     </script>
