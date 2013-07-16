@@ -90,7 +90,8 @@ $(function() {
         node.filter(function(d) { return d.gloss; }).append("title")
             .text(function(d) { return d.gloss; });
         node.filter(function(d) { return d.word; }).append("text")
-            .text(function(d) { return d.word; });
+            .text(function(d) { return d.word; })
+            .attr("transform", "translate(8, 4)");
 
         node = svg.selectAll(".node");
         link = svg.selectAll(".link");
