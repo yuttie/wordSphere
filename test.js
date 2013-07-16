@@ -155,4 +155,17 @@ $(function() {
         }
         update(r.graph);
     });
+    $(document).on('wheel mousewheel DOMMouseScroll', function(e) {
+        var delta =   e.originalEvent.deltaY       // 'wheel' event
+                  || -e.originalEvent.wheelDeltaY  // Webkit's mousewheel event
+                  || -e.originalEvent.wheelDelta;  // other's mousewheel event
+        if (delta > 0) {
+            force.charge(Math.min(force.charge() + 10, -10));
+        }
+        else if (delta < 0) {
+            force.charge(force.charge() - 10);
+        }
+        force.start();
+        e.preventDefault();
+    });
 });
