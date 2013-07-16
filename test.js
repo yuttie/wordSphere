@@ -3,7 +3,8 @@ function extract_graph(synsets, query, max_synsets) {
     var count_synsets = 0;
     var graph = { nodes: [], links: [] };
     var word_node = {};
-    for (var i = 0; i < synsets.length; ++i) {
+    var i;
+    for (i = 0; i < synsets.length; ++i) {
         var synset = synsets[i];
         var matched = synset.words.some(function(w) { return re.exec(w); });
         if (matched) {
@@ -34,11 +35,16 @@ function extract_graph(synsets, query, max_synsets) {
             graph.nodes = graph.nodes.concat(synset_node, word_nodes);
             graph.links = graph.links.concat(links);
             if (count_synsets == max_synsets) {
+                ++i;
                 break;
             }
         }
     }
-    return graph;
+    return {
+        graph: graph,
+        num_synsets_checked: i,
+        num_synsets_matched: count_synsets
+    };
 }
 
 $(function() {
@@ -126,14 +132,25 @@ $(function() {
     d3.json("test.json", function(error, data) {
         synsets = data;
 
-        var graph = extract_graph(synsets, "", 50);
-
-        update(graph);
+        var r = extract_graph(synsets, "", 50);
+        if (r.num_synsets_checked < synsets.length) {
+            $("#message").text("(+50 synsets found)");
+        }
+        else {
+            $("#message").text("(" + r.num_synsets_matched + " synsets found)");
+        }
+        update(r.graph);
     });
 
     $("#query").on("input", function(e) {
         var query = $(this).val();
-        var graph = extract_graph(synsets, query, 50);
-        update(graph);
+        var r = extract_graph(synsets, query, 50);
+        if (r.num_synsets_checked < synsets.length) {
+            $("#message").text("(+50 synsets found)");
+        }
+        else {
+            $("#message").text("(" + r.num_synsets_matched + " synsets found)");
+        }
+        update(r.graph);
     });
 });

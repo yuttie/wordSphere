@@ -23,21 +23,30 @@
           position: absolute;
           bottom: 0;
           right: 0;
-          margin: 0;
-          padding: 0.25em 0.5em;
-          background: transparent;
+          margin: 0.25em 0.5em;
+          background: rgba(255, 255, 255, 0.8);
       }
       #query {
-          background: rgba(255, 255, 255, 0.8);
+          position: relative;
+          background: transparent;
           font-size: 1.5em;
           border: 1px solid gray;
           padding: 0.2em 0.5em;
+          width: 20em;
+      }
+      #message {
+          color: gray;
+          position: absolute;
+          top: 50%;
+          right: 0.25em;
+          margin-top: -0.5em;
       }
     </style>
   </head>
   <body>
     <svg></svg>
     <div id="control-box">
+      <div id="message"></div>
       <input type="text" id="query" autofocus="autofocus" placeholder="Word to search for..." />
     </div>
     <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
