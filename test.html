@@ -28,6 +28,8 @@
       $(function() {
           "use strict";
 
+          var color = d3.scale.category20();
+
           var force = d3.layout.force()
               .charge(-120)
               .linkDistance(100)
@@ -50,16 +52,16 @@
               var node = svg.selectAll(".node")
                   .data(graph.nodes)
                   .enter().append("g")
-                  .attr("id", function(d) { return d.name; })
+                  .attr("id", function(d) { return d.name || "synset" + d.synset_id; })
                   .attr("class", "node")
                   .attr("transform", function(d) { return "translate(" + d.x + ", " + d.y + ")"; });
 
               node.append("circle")
-                  .attr("r", 5)
-                  .style("fill", "gray");
+                  .attr("r", function(d) { return d.name ? 5 : 10; })
+                  .style("fill", function(d) { return d.name ? "gray" : color(d.synset_id); });
 
               node.append("text")
-                  .text(function(d) { return d.name; });
+                  .text(function(d) { return d.name || ""; });
 
               force.on("tick", function() {
                   link.attr("x1", function(d) { return scrollX + d.source.x; })

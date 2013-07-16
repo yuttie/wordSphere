@@ -44,14 +44,16 @@ output = {nodes: [], links: []}
 
 word_to_index = Hash.new
 
-data.values.first(1000).each do |entry|
+data.values.first(1000).each_with_index do |entry, i|
+  synset_node_id = output[:nodes].size
+  output[:nodes].push({name: nil, synset_id: i})
   entry.word_and_lex_ids.each {|word, _|
     if !word_to_index.has_key?(word)
       word_to_index[word] = output[:nodes].size
       output[:nodes].push({name: word})
     end
+    output[:links] << {source: synset_node_id, target: word_to_index[word], value: 1}
   }
-  entry.word_and_lex_ids.map {|word, _| word_to_index[word] }.combination(2) {|i, j| output[:links] << {source: i, target: j, value: 1} }
 end
 
 puts(JSON.generate(output))
