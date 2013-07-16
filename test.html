@@ -91,9 +91,23 @@
               };
           }
 
-          function update() {
-              var graph = narrow_graph_by_words(["fall"], graph_original);
+          function narrow_graph_randomly(p, graph) {
+              var to_be_shown = graph.nodes.map(function(n) { return !n.name && Math.random() < p; });
+              $.each(graph.nodes, function(i, n) {
+                  if (!n.name && to_be_shown[i]) {
+                      $.each(neighbors[i], function(_, j) {
+                          to_be_shown[j] = true;
+                      });
+                  }
+              });
 
+              return {
+                  links: graph.links.filter(function(l) { return to_be_shown[l.source.index] && to_be_shown[l.target.index]; }),
+                  nodes: graph.nodes.filter(function(n) { return to_be_shown[n.index]; })
+              };
+          }
+
+          function update(graph) {
               force
                   .nodes(graph.nodes)
                   .links(graph.links)
@@ -160,7 +174,7 @@
               word_indices = index_words(graph);
               neighbors = calculate_neighbors(graph);
               graph_original = graph;
-              update();
+              update(narrow_graph_randomly(0.01, graph_original));
           });
       });
     </script>
