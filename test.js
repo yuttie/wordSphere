@@ -19,7 +19,8 @@ function extract_graph(synsets, query, max_synsets) {
                 if (!word_node[w]) {
                     word_node[w] = {
                         id: w,
-                        word: w
+                        word: w,
+                        matched: !!re.exec(w)
                     };
                     word_nodes.push(word_node[w]);
                 }
@@ -91,7 +92,8 @@ $(function() {
             .text(function(d) { return d.gloss; });
         node.filter(function(d) { return d.word; }).append("text")
             .text(function(d) { return d.word; })
-            .attr("transform", "translate(8, 4)");
+            .attr("transform", "translate(8, 4)")
+            .classed("non-matched", function(d) { return !d.matched; });
 
         node = svg.selectAll(".node");
         link = svg.selectAll(".link");
