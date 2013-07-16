@@ -87,8 +87,10 @@ $(function() {
         node.append("circle")
             .attr("r", function(d) { return d.word ? 5 : 10; })
             .style("fill", function(d) { return d.word ? "gray" : color(d.synset_id); });
-        node.append("text")
-            .text(function(d) { return d.word || ""; });
+        node.filter(function(d) { return d.gloss; }).append("title")
+            .text(function(d) { return d.gloss; });
+        node.filter(function(d) { return d.word; }).append("text")
+            .text(function(d) { return d.word; });
 
         node = svg.selectAll(".node");
         link = svg.selectAll(".link");
