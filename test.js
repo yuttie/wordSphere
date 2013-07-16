@@ -126,14 +126,16 @@ $(function() {
 
         node = svg.selectAll(".node");
         link = svg.selectAll(".link");
-        force.on("tick", function() {
+
+        function update_position() {
             link.attr("x1", function(d) { return scrollX + d.source.x; })
                 .attr("y1", function(d) { return scrollY + d.source.y; })
                 .attr("x2", function(d) { return scrollX + d.target.x; })
                 .attr("y2", function(d) { return scrollY + d.target.y; });
 
             node.attr("transform", function(d) { return "translate(" + (scrollX + d.x) + ", " + (scrollY + d.y) + ")"; });
-        });
+        }
+        force.on("tick", update_position);
 
         var grab = null;
         $("svg").on("mousedown", function(e) {
@@ -150,12 +152,7 @@ $(function() {
             if (e.which === 1 && grab) {
                 scrollX = grab.scrollX + (e.pageX - grab.pageX);
                 scrollY = grab.scrollY + (e.pageY - grab.pageY);
-                link.attr("x1", function(d) { return scrollX + d.source.x; })
-                    .attr("y1", function(d) { return scrollY + d.source.y; })
-                    .attr("x2", function(d) { return scrollX + d.target.x; })
-                    .attr("y2", function(d) { return scrollY + d.target.y; });
-
-                node.attr("transform", function(d) { return "translate(" + (scrollX + d.x) + ", " + (scrollY + d.y) + ")"; });
+                update_position();
             }
         });
         $("svg").on("mouseup", function(e) {
