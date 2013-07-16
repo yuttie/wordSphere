@@ -7,7 +7,8 @@ IndexEntry = Struct.new(:lemma, :pos, :synset_cnt, :p_cnt, :ptr_symbols, :sense_
 DataEntry = Struct.new(:synset_offset, :lex_filenum, :ss_type, :w_cnt, :word_and_lex_ids, :p_cnt, :ptrs, :frames, :gloss)
 
 index = Hash.new
-POS_LIST.map {|pos| "index.#{pos}"}.each {|fn|
+POS_LIST.each {|pos|
+  fn = "index.#{pos}"
   fp = DICT_DIR + '/' + fn
   open(fp, 'r') {|file|
     file.each_line.lazy.drop_while {|l| l =~ /^  / }.each {|l|
@@ -16,13 +17,14 @@ POS_LIST.map {|pos| "index.#{pos}"}.each {|fn|
       sense_cnt, tagsense_cnt, *synset_offsets = rest
 
       entry = IndexEntry.new(lemma, pos, synset_cnt, p_cnt, ptr_symbols, sense_cnt, tagsense_cnt, synset_offsets)
-      index[lemma] = entry
+      index[[pos, lemma]] = entry
     }
   }
 }
 
 data = Hash.new
-POS_LIST.map {|pos| "data.#{pos}"}.each {|fn|
+POS_LIST.each {|pos|
+  fn = "data.#{pos}"
   fp = DICT_DIR + '/' + fn
   open(fp, 'r') {|file|
     file.each_line.lazy.drop_while {|l| l =~ /^  / }.each {|l|
@@ -33,7 +35,7 @@ POS_LIST.map {|pos| "data.#{pos}"}.each {|fn|
       ptrs, *frames = rest.take(4 * p_cnt.to_i).each_slice(4).to_a, rest.drop(4 * p_cnt.to_i)
 
       entry = DataEntry.new(synset_offset, lex_filenum, ss_type, w_cnt, word_and_lex_ids, p_cnt, ptrs, frames, gloss)
-      data[synset_offset] = entry
+      data[[pos, synset_offset]] = entry
     }
   }
 }
