@@ -13,20 +13,22 @@ function extract_graph(synsets, query, max_synsets) {
                 synset_id: i,
                 gloss: synset.gloss
             };
-            var word_nodes = synset.words.map(function(w) {
+            var word_nodes = [];
+            synset.words.forEach(function(w) {
                 if (!word_node[w]) {
                     word_node[w] = {
                         id: w,
                         word: w
                     };
+                    word_nodes.push(word_node[w]);
                 }
-                return word_node[w];
             });
-            var links = word_nodes.map(function(n) {
+            var links = synset.words.map(function(w) {
+                var wn = word_node[w];
                 return {
-                    id: "link:" + synset_node.id + ":" + n.id,
+                    id: "link:" + synset_node.id + ":" + wn.id,
                     source: synset_node,
-                    target: n
+                    target: wn
                 };
             });
             graph.nodes = graph.nodes.concat(synset_node, word_nodes);
