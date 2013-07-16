@@ -169,18 +169,17 @@ $(function() {
         update({nodes: [], links: []});
     });
 
-    $("#query").on("input", function(e) {
-        var graph = $.extend(true, {}, graph_original);
-        reconstruct_links(graph);
+    $("#query").on("keypress", function(e) {
+        if (e.which === 13) {
+            var graph = $.extend(true, {}, graph_original);
+            reconstruct_links(graph);
 
-        var q = $(this).val();
-        var re = new RegExp(q, "i");
-        var matching_words = words.filter(function(w) { return re.exec(w); });
+            var q = $(this).val();
+            var re = new RegExp(q, "i");
+            var matching_words = words.filter(function(w) { return re.exec(w); });
 
-        graph = narrow_graph_by_words(graph, matching_words);
-        while (graph.nodes.length > 500) {
-            graph = narrow_graph_randomly(graph, 0.8);
+            graph = narrow_graph_by_words(graph, matching_words);
+            update(graph);
         }
-        update(graph);
     });
 });
