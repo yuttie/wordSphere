@@ -72,26 +72,27 @@
           var graph_original = null;
           var word_indices = null;
           var neighbors = null;
-          function update() {
-              function nodes_to_show(words) {
-                  var to_be_shown = {};
-                  var stack = words.map(function(w) { return word_indices[w]; });
-                  while (stack.length > 0) {
-                      var ni = stack.pop();
-                      to_be_shown[ni] = true;
-                      $.each(neighbors[ni], function(i, nni) {
-                          if (!to_be_shown[nni]) {
-                              stack.push(nni);
-                          }
-                      });
-                  }
-                  return to_be_shown;
+          function narrow_graph_by_words(words, graph) {
+              var to_be_shown = {};
+              var stack = words.map(function(w) { return word_indices[w]; });
+              while (stack.length > 0) {
+                  var ni = stack.pop();
+                  to_be_shown[ni] = true;
+                  $.each(neighbors[ni], function(i, nni) {
+                      if (!to_be_shown[nni]) {
+                          stack.push(nni);
+                      }
+                  });
               }
-              var to_be_shown = nodes_to_show(["fall"]);
 
-              var graph = {};
-              graph.links = graph_original.links.filter(function(l) { return to_be_shown[l.source.index] || to_be_shown[l.target.index]; });
-              graph.nodes = graph_original.nodes.filter(function(n) { return to_be_shown[n.index]; });
+              return {
+                  links: graph.links.filter(function(l) { return to_be_shown[l.source.index] || to_be_shown[l.target.index]; }),
+                  nodes: graph.nodes.filter(function(n) { return to_be_shown[n.index]; })
+              };
+          }
+
+          function update() {
+              var graph = narrow_graph_by_words(["fall"], graph_original);
 
               force
                   .nodes(graph.nodes)
