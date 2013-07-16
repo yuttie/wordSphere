@@ -87,9 +87,20 @@
               return neighbors;
           }
 
+          function extract_words(graph) {
+              var words = [];
+              $.each(graph.nodes, function(i, n) {
+                  if (n.word) {
+                      words.push(n.word);
+                  }
+              });
+              return words;
+          }
+
           var graph_original = null;
           var word_indices = null;
           var neighbors = null;
+          var words = null;
           function narrow_graph_by_words(words, graph) {
               var to_be_shown = {};
               var stack = words.map(function(w) { return word_indices[w]; });
@@ -205,6 +216,7 @@
               reconstruct_links(graph_original);
               word_indices = index_words(graph_original);
               neighbors = calculate_neighbors(graph_original);
+              words = extract_words(graph_original);
 
               graph = $.extend(true, {}, graph_original);
               reconstruct_links(graph);
@@ -214,15 +226,16 @@
               }
               update(graph);
           });
+
           $("#query").on("input", function(e) {
               var graph = $.extend(true, {}, graph_original);
               reconstruct_links(graph);
 
               var q = $(this).val();
               var re = new RegExp(q, "i");
-              var words = graph_original.nodes.filter(function(n) { return n.word && re.exec(n.word); }).map(function(n) { return n.word; });
+              var matching_words = words.filter(function(w) { return re.exec(w); });
 
-              graph = narrow_graph_by_words(words, graph);
+              graph = narrow_graph_by_words(matching_words, graph);
               while (graph.nodes.length > 500) {
                   graph = narrow_graph_randomly(0.8, graph);
               }
