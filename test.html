@@ -51,6 +51,12 @@
               });
           }
 
+          function index_words(graph) {
+              var indices = {};
+              $.each(graph.nodes, function(i, n) { indices[n.name] = i; });
+              return indices;
+          }
+
           function calculate_neighbors(graph) {
               var neighbors = [];
               $.each(graph.links, function(i, link) {
@@ -64,13 +70,12 @@
           }
 
           var graph_original = null;
-          var word_to_node_index = null;
+          var word_indices = null;
           var neighbors = null;
           function update() {
-              var to_be_shown = {};
-              function update_nodes_to_show(word) {
-                  to_be_shown = {};
-                  var stack = [word_to_node_index[word]];
+              function nodes_to_show(word) {
+                  var to_be_shown = {};
+                  var stack = [word_indices[word]];
                   while (stack.length > 0) {
                       var ni = stack.pop();
                       to_be_shown[ni] = true;
@@ -80,8 +85,9 @@
                           }
                       });
                   }
+                  return to_be_shown;
               }
-              update_nodes_to_show("fall");
+              var to_be_shown = nodes_to_show("fall");
 
               var graph = {};
               graph.links = graph_original.links.filter(function(l) { return to_be_shown[l.source.index] || to_be_shown[l.target.index]; });
@@ -150,8 +156,7 @@
 
           d3.json("test.json", function(error, graph) {
               reconstruct_links(graph);
-              word_to_node_index = {};
-              $.each(graph.nodes, function(i, n) { word_to_node_index[n.name] = i; });
+              word_indices = index_words(graph);
               neighbors = calculate_neighbors(graph);
               graph_original = graph;
               update();
