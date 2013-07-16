@@ -41,10 +41,51 @@
           var scrollY = 0;
           var svg = d3.select("body").append("svg");
 
+          function reconstruct_links(graph) {
+              $.each(graph.nodes, function(i, node) {
+                  node.index = i;
+              });
+              $.each(graph.links, function(i, link) {
+                  link.source = graph.nodes[typeof(link.source) === "number" ? link.source : link.source.index];
+                  link.target = graph.nodes[typeof(link.target) === "number" ? link.target : link.target.index];
+              });
+          }
+
+          function calculate_neighbors(graph) {
+              var neighbors = [];
+              $.each(graph.links, function(i, link) {
+                  neighbors[link.source.index] = neighbors[link.source.index] || [];
+                  neighbors[link.target.index] = neighbors[link.target.index] || [];
+
+                  neighbors[link.source.index].push(link.target.index);
+                  neighbors[link.target.index].push(link.source.index);
+              });
+              return neighbors;
+          }
+
           var graph_original = null;
-          var graph = null;
+          var word_to_node_index = null;
+          var neighbors = null;
           function update() {
-              graph = $.extend(true, {}, graph_original);
+              var to_be_shown = {};
+              function update_nodes_to_show(word) {
+                  to_be_shown = {};
+                  var stack = [word_to_node_index[word]];
+                  while (stack.length > 0) {
+                      var ni = stack.pop();
+                      to_be_shown[ni] = true;
+                      $.each(neighbors[ni], function(i, nni) {
+                          if (!to_be_shown[nni]) {
+                              stack.push(nni);
+                          }
+                      });
+                  }
+              }
+              update_nodes_to_show("fall");
+
+              var graph = {};
+              graph.links = graph_original.links.filter(function(l) { return to_be_shown[l.source.index] || to_be_shown[l.target.index]; });
+              graph.nodes = graph_original.nodes.filter(function(n) { return to_be_shown[n.index]; });
 
               force
                   .nodes(graph.nodes)
@@ -108,6 +149,10 @@
           }
 
           d3.json("test.json", function(error, graph) {
+              reconstruct_links(graph);
+              word_to_node_index = {};
+              $.each(graph.nodes, function(i, n) { word_to_node_index[n.name] = i; });
+              neighbors = calculate_neighbors(graph);
               graph_original = graph;
               update();
           });
