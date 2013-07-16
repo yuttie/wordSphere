@@ -1,8 +1,45 @@
+function reconstruct_links(graph) {
+    $.each(graph.nodes, function(i, node) {
+        node.index = i;
+    });
+    $.each(graph.links, function(i, link) {
+        link.source = graph.nodes[typeof(link.source) === "number" ? link.source : link.source.index];
+        link.target = graph.nodes[typeof(link.target) === "number" ? link.target : link.target.index];
+    });
+}
+
+function index_words(graph) {
+    var indices = {};
+    $.each(graph.nodes, function(i, n) { indices[n.word] = i; });
+    return indices;
+}
+
+function calculate_neighbors(graph) {
+    var neighbors = [];
+    $.each(graph.links, function(i, link) {
+        neighbors[link.source.index] = neighbors[link.source.index] || [];
+        neighbors[link.target.index] = neighbors[link.target.index] || [];
+
+        neighbors[link.source.index].push(link.target.index);
+        neighbors[link.target.index].push(link.source.index);
+    });
+    return neighbors;
+}
+
+function extract_words(graph) {
+    var words = [];
+    $.each(graph.nodes, function(i, n) {
+        if (n.word) {
+            words.push(n.word);
+        }
+    });
+    return words;
+}
+
 $(function() {
     "use strict";
 
     var color = d3.scale.category20();
-
     var force = d3.layout.force()
         .charge(-400)
         .linkDistance(100)
@@ -14,49 +51,11 @@ $(function() {
     var scrollY = 0;
     var svg = d3.select("body svg");
 
-    function reconstruct_links(graph) {
-        $.each(graph.nodes, function(i, node) {
-            node.index = i;
-        });
-        $.each(graph.links, function(i, link) {
-            link.source = graph.nodes[typeof(link.source) === "number" ? link.source : link.source.index];
-            link.target = graph.nodes[typeof(link.target) === "number" ? link.target : link.target.index];
-        });
-    }
-
-    function index_words(graph) {
-        var indices = {};
-        $.each(graph.nodes, function(i, n) { indices[n.word] = i; });
-        return indices;
-    }
-
-    function calculate_neighbors(graph) {
-        var neighbors = [];
-        $.each(graph.links, function(i, link) {
-            neighbors[link.source.index] = neighbors[link.source.index] || [];
-            neighbors[link.target.index] = neighbors[link.target.index] || [];
-
-            neighbors[link.source.index].push(link.target.index);
-            neighbors[link.target.index].push(link.source.index);
-        });
-        return neighbors;
-    }
-
-    function extract_words(graph) {
-        var words = [];
-        $.each(graph.nodes, function(i, n) {
-            if (n.word) {
-                words.push(n.word);
-            }
-        });
-        return words;
-    }
-
     var graph_original = null;
     var word_indices = null;
     var neighbors = null;
     var words = null;
-    function narrow_graph_by_words(words, graph) {
+    function narrow_graph_by_words(graph, words) {
         var to_be_shown = {};
         var stack = words.map(function(w) { return word_indices[w]; });
         while (stack.length > 0) {
@@ -75,7 +74,7 @@ $(function() {
         };
     }
 
-    function narrow_graph_randomly(p, graph) {
+    function narrow_graph_randomly(graph, p) {
         var to_be_shown = graph.nodes.map(function(n) { return !n.word && Math.random() < p; });
         $.each(graph.nodes, function(i, n) {
             if (!n.word && to_be_shown[i]) {
@@ -177,7 +176,7 @@ $(function() {
         reconstruct_links(graph);
 
         while (graph.nodes.length > 500) {
-            graph = narrow_graph_randomly(0.8, graph);
+            graph = narrow_graph_randomly(graph, 0.8);
         }
         update(graph);
     });
@@ -190,9 +189,9 @@ $(function() {
         var re = new RegExp(q, "i");
         var matching_words = words.filter(function(w) { return re.exec(w); });
 
-        graph = narrow_graph_by_words(matching_words, graph);
+        graph = narrow_graph_by_words(graph, matching_words);
         while (graph.nodes.length > 500) {
-            graph = narrow_graph_randomly(0.8, graph);
+            graph = narrow_graph_randomly(graph, 0.8);
         }
         update(graph);
     });
