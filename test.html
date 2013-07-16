@@ -71,7 +71,7 @@
 
           function index_words(graph) {
               var indices = {};
-              $.each(graph.nodes, function(i, n) { indices[n.name] = i; });
+              $.each(graph.nodes, function(i, n) { indices[n.word] = i; });
               return indices;
           }
 
@@ -110,9 +110,9 @@
           }
 
           function narrow_graph_randomly(p, graph) {
-              var to_be_shown = graph.nodes.map(function(n) { return !n.name && Math.random() < p; });
+              var to_be_shown = graph.nodes.map(function(n) { return !n.word && Math.random() < p; });
               $.each(graph.nodes, function(i, n) {
-                  if (!n.name && to_be_shown[i]) {
+                  if (!n.word && to_be_shown[i]) {
                       $.each(neighbors[i], function(_, j) {
                           to_be_shown[j] = true;
                       });
@@ -148,16 +148,16 @@
 
               node.selectAll("*").remove();
               node.append("circle")
-                  .attr("r", function(d) { return d.name ? 5 : 10; })
-                  .style("fill", function(d) { return d.name ? "gray" : color(d.synset_id); });
+                  .attr("r", function(d) { return d.word ? 5 : 10; })
+                  .style("fill", function(d) { return d.word ? "gray" : color(d.synset_id); });
               node.append("text")
-                  .text(function(d) { return d.name || ""; });
+                  .text(function(d) { return d.word || ""; });
 
               node_enter.append("circle")
-                  .attr("r", function(d) { return d.name ? 5 : 10; })
-                  .style("fill", function(d) { return d.name ? "gray" : color(d.synset_id); });
+                  .attr("r", function(d) { return d.word ? 5 : 10; })
+                  .style("fill", function(d) { return d.word ? "gray" : color(d.synset_id); });
               node_enter.append("text")
-                  .text(function(d) { return d.name || ""; });
+                  .text(function(d) { return d.word || ""; });
 
               node = svg.selectAll(".node");
               link = svg.selectAll(".link");
@@ -220,7 +220,7 @@
 
               var q = $(this).val();
               var re = new RegExp(q, "i");
-              var words = graph_original.nodes.filter(function(n) { return n.name && re.exec(n.name); }).map(function(n) { return n.name; });
+              var words = graph_original.nodes.filter(function(n) { return n.word && re.exec(n.word); }).map(function(n) { return n.word; });
 
               graph = narrow_graph_by_words(words, graph);
               while (graph.nodes.length > 500) {
