@@ -146,10 +146,16 @@
               node
                   .exit().remove();
 
+              node.selectAll("*").remove();
+              node.append("circle")
+                  .attr("r", function(d) { return d.name ? 5 : 10; })
+                  .style("fill", function(d) { return d.name ? "gray" : color(d.synset_id); });
+              node.append("text")
+                  .text(function(d) { return d.name || ""; });
+
               node_enter.append("circle")
                   .attr("r", function(d) { return d.name ? 5 : 10; })
                   .style("fill", function(d) { return d.name ? "gray" : color(d.synset_id); });
-
               node_enter.append("text")
                   .text(function(d) { return d.name || ""; });
 
