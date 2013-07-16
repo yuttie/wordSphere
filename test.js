@@ -7,9 +7,24 @@ function extract_graph(synsets, query, max_synsets) {
         var matched = synset.words.some(function(w) { return re.exec(w); });
         if (matched) {
             count_synsets += 1;
-            var synset_node = { id: "synset:" + i, synset_id: i, gloss: synset.gloss };
-            var word_nodes = synset.words.map(function(w) { return { id: w, word: w }; });
-            var links = word_nodes.map(function(n) { return { id: "link:" + synset_node.id + ":" + n.id, source: synset_node, target: n }; });
+            var synset_node = {
+                id: "synset:" + i,
+                synset_id: i,
+                gloss: synset.gloss
+            };
+            var word_nodes = synset.words.map(function(w) {
+                return {
+                    id: w,
+                    word: w
+                };
+            });
+            var links = word_nodes.map(function(n) {
+                return {
+                    id: "link:" + synset_node.id + ":" + n.id,
+                    source: synset_node,
+                    target: n
+                };
+            });
             graph.nodes = graph.nodes.concat(synset_node, word_nodes);
             graph.links = graph.links.concat(links);
             if (count_synsets == max_synsets) {
