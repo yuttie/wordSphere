@@ -73,9 +73,9 @@
           var word_indices = null;
           var neighbors = null;
           function update() {
-              function nodes_to_show(word) {
+              function nodes_to_show(words) {
                   var to_be_shown = {};
-                  var stack = [word_indices[word]];
+                  var stack = words.map(function(w) { return word_indices[w]; });
                   while (stack.length > 0) {
                       var ni = stack.pop();
                       to_be_shown[ni] = true;
@@ -87,7 +87,7 @@
                   }
                   return to_be_shown;
               }
-              var to_be_shown = nodes_to_show("fall");
+              var to_be_shown = nodes_to_show(["fall"]);
 
               var graph = {};
               graph.links = graph_original.links.filter(function(l) { return to_be_shown[l.source.index] || to_be_shown[l.target.index]; });
