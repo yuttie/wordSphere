@@ -131,7 +131,7 @@ $(function() {
         update(graph);
     });
 
-    $("#query").on("keypress", function(e) {
+    $("#query").on("input", function(e) {
         var query = $(this).val();
         var graph = extract_graph(synsets, query, 100);
         update(graph);
