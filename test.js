@@ -2,6 +2,7 @@ function extract_graph(synsets, query, max_synsets) {
     var re = new RegExp(query, "i");
     var count_synsets = 0;
     var graph = { nodes: [], links: [] };
+    var word_node = {};
     for (var i = 0; i < synsets.length; ++i) {
         var synset = synsets[i];
         var matched = synset.words.some(function(w) { return re.exec(w); });
@@ -13,10 +14,13 @@ function extract_graph(synsets, query, max_synsets) {
                 gloss: synset.gloss
             };
             var word_nodes = synset.words.map(function(w) {
-                return {
-                    id: w,
-                    word: w
-                };
+                if (!word_node[w]) {
+                    word_node[w] = {
+                        id: w,
+                        word: w
+                    };
+                }
+                return word_node[w];
             });
             var links = word_nodes.map(function(n) {
                 return {
