@@ -120,9 +120,7 @@
               var node = svg.selectAll(".node")
                   .data(graph.nodes)
                   .enter().append("g")
-                  .attr("id", function(d) { return d.name || "synset" + d.synset_id; })
-                  .attr("class", "node")
-                  .attr("transform", function(d) { return "translate(" + d.x + ", " + d.y + ")"; });
+                  .attr("class", "node");
 
               node.append("circle")
                   .attr("r", function(d) { return d.name ? 5 : 10; })
