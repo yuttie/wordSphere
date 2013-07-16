@@ -52,8 +52,8 @@ $(function() {
 
     var color = d3.scale.category20();
     var force = d3.layout.force()
-        .charge(-400)
-        .linkDistance(100)
+        .charge(-200)
+        .linkDistance(50)
         .size([$(window).innerWidth(), $(window).innerHeight()]);
     $(window).on('resize', function() {
         force.size([$('svg').width(), $('svg').height()]);
