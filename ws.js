@@ -144,7 +144,7 @@ function getSvgSize() {
     }
 
     var synsets = null;
-    d3.json("test.json", function(error, data) {
+    d3.json("synsets.json", function(error, data) {
         synsets = data;
 
         var r = extract_graph(synsets, "", 50);
