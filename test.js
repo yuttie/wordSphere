@@ -178,10 +178,10 @@ function getSvgSize() {
                   || -e.wheelDeltaY  // Webkit's mousewheel event
                   || -e.wheelDelta;  // other's mousewheel event
         if (delta > 0) {
-            force.charge(Math.min(force.charge() + 10, -10));
+            force.charge(Math.min(force.charge() + 50, 0));
         }
         else if (delta < 0) {
-            force.charge(force.charge() - 10);
+            force.charge(force.charge() - 50);
         }
         force.start();
         e.preventDefault();
