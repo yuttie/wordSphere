@@ -62,6 +62,34 @@
         return [width, height];
     }
 
+    function getopt(f) {
+        window.location.search.slice(1).split("&").forEach(function(param) {
+            var kv = param.split("=");
+            var key = decodeURIComponent(kv[0]);
+            var value = decodeURIComponent(kv[1]);
+            f(key, value);
+        });
+    }
+
+    var data_name = "synsets.json";
+    getopt(function(key, value) {
+        switch (key) {
+        case "lang":
+            switch (value) {
+            case "en":
+                data_name = "synsets.json";
+                break;
+            case "ja":
+                data_name = "synsets_ja.json";
+                break;
+            default:
+                alert('No data available for language "' + value + '".');
+                break;
+            }
+            break;
+        }
+    });
+
     var color = d3.scale.category20();
     var force = d3.layout.force()
         .charge(-200)
@@ -149,7 +177,7 @@
     }
 
     var synsets = null;
-    d3.json("synsets.json", function(error, data) {
+    d3.json(data_name, function(error, data) {
         synsets = data;
 
         var r = extract_graph(synsets, "", 50);
