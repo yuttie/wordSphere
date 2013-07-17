@@ -1,61 +1,66 @@
-function extract_graph(synsets, query, max_synsets) {
-    var re = new RegExp(query, "i");
-    var count_synsets = 0;
-    var graph = { nodes: [], links: [] };
-    var word_node = {};
-    var i;
-    for (i = 0; i < synsets.length; ++i) {
-        var synset = synsets[i];
-        var matched = synset.words.some(function(w) { return re.exec(w); });
-        if (matched) {
-            count_synsets += 1;
-            var synset_node = {
-                id: "synset:" + i,
-                synset_id: i,
-                gloss: synset.gloss
-            };
-            var word_nodes = [];
-            synset.words.forEach(function(w) {
-                if (!word_node[w]) {
-                    word_node[w] = {
-                        id: w,
-                        word: w,
-                        matched: !!re.exec(w)
-                    };
-                    word_nodes.push(word_node[w]);
-                }
-            });
-            var links = synset.words.map(function(w) {
-                var wn = word_node[w];
-                return {
-                    id: "link:" + synset_node.id + ":" + wn.id,
-                    source: synset_node,
-                    target: wn
-                };
-            });
-            graph.nodes = graph.nodes.concat(synset_node, word_nodes);
-            graph.links = graph.links.concat(links);
-            if (count_synsets == max_synsets) {
-                ++i;
-                break;
-            }
-        }
-    }
-    return {
-        graph: graph,
-        num_synsets_checked: i,
-        num_synsets_matched: count_synsets
-    };
-}
-
-function getSvgSize() {
-    var width = parseInt(d3.select("svg").style("width"));
-    var height = parseInt(d3.select("svg").style("height"));
-    return [width, height];
-}
-
 (function() {
     "use strict";
+
+    var word_node = {};
+    function extract_graph(synsets, query, max_synsets) {
+        var re = new RegExp(query, "i");
+        var count_synsets = 0;
+        var graph = { nodes: [], links: [] };
+        var word_added = {};
+        var i;
+        for (i = 0; i < synsets.length; ++i) {
+            var synset = synsets[i];
+            var matched = synset.words.some(function(w) { return re.exec(w); });
+            if (matched) {
+                count_synsets += 1;
+                var synset_node = {
+                    id: "synset:" + i,
+                    synset_id: i,
+                    gloss: synset.gloss
+                };
+                var word_nodes = [];
+                synset.words.forEach(function(w) {
+                    if (!word_added[w]) {
+                        if (!word_node[w]) {
+                            word_node[w] = {
+                                id: w,
+                                word: w
+                            };
+                        }
+                        var n = word_node[w];
+                        n.matched = !!re.exec(w);
+                        word_nodes.push(n);
+                        word_added[w] = true;
+                    }
+                });
+                var links = synset.words.map(function(w) {
+                    var wn = word_node[w];
+                    return {
+                        id: "link:" + synset_node.id + ":" + wn.id,
+                        source: synset_node,
+                        target: wn
+                    };
+                });
+                graph.nodes = graph.nodes.concat(synset_node, word_nodes);
+                graph.links = graph.links.concat(links);
+                if (count_synsets == max_synsets) {
+                    ++i;
+                    break;
+                }
+            }
+        }
+        return {
+            graph: graph,
+            num_synsets_checked: i,
+            num_synsets_matched: count_synsets
+        };
+    }
+
+    function getSvgSize() {
+        var width = parseInt(d3.select("svg").style("width"));
+        var height = parseInt(d3.select("svg").style("height"));
+        return [width, height];
+    }
 
     var color = d3.scale.category20();
     var force = d3.layout.force()
