@@ -48,6 +48,12 @@ function extract_graph(synsets, query, max_synsets) {
     };
 }
 
+function getSvgSize() {
+    var width = parseInt(d3.select("svg").style("width"));
+    var height = parseInt(d3.select("svg").style("height"));
+    return [width, height];
+}
+
 $(function() {
     "use strict";
 
@@ -55,10 +61,12 @@ $(function() {
     var force = d3.layout.force()
         .charge(-200)
         .linkDistance(50)
-        .size([$(window).innerWidth(), $(window).innerHeight()]);
-    $(window).on('resize', function() {
-        force.size([$('svg').width(), $('svg').height()]);
-    });
+        .size(getSvgSize());
+    window.onresize = function() {
+        force.size(getSvgSize());
+        force.resume();
+    };
+
     var scrollX = 0;
     var scrollY = 0;
     var svg = d3.select("body svg");
