@@ -123,7 +123,9 @@
             .enter().append("g")
             .attr("class", "node")
             .call(force.drag)
-            .call(function(n) { n.on("mousedown", function() { d3.event.stopPropagation(); }); });
+            .call(function(n) {
+                n.on("mousedown", function() { d3.event.stopPropagation(); });
+                n.on("touchstart", function() { d3.event.stopPropagation(); }); });
         node
             .exit().remove();
 
@@ -173,6 +175,46 @@
             if (d3.event.which === 1) {
                 grab = null;
             }
+        });
+        // for touch devices
+        d3.select("svg").on("touchstart", function() {
+            if (!grab) {
+                var t = d3.event.changedTouches[0];
+                grab = {
+                    tid: t.identifier,
+                    pageX: t.pageX,
+                    pageY: t.pageY,
+                    scrollX: scrollX,
+                    scrollY: scrollY
+                };
+            }
+            d3.event.preventDefault();
+        });
+        d3.select("svg").on("touchmove", function() {
+            if (grab) {
+                for (var i = 0; i < d3.event.changedTouches.length; ++i) {
+                    var t = d3.event.changedTouches[i];
+                    if (t.identifier === grab.tid) {
+                        scrollX = grab.scrollX + (t.pageX - grab.pageX);
+                        scrollY = grab.scrollY + (t.pageY - grab.pageY);
+                        update_position();
+                        break;
+                    }
+                }
+            }
+            d3.event.preventDefault();
+        });
+        d3.select("svg").on("touchend", function() {
+            if (grab) {
+                for (var i = 0; i < d3.event.changedTouches.length; ++i) {
+                    var t = d3.event.changedTouches[i];
+                    if (t.identifier === grab.tid) {
+                        grab = null;
+                        break;
+                    }
+                }
+            }
+            d3.event.preventDefault();
         });
     }
 
