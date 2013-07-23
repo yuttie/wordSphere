@@ -95,10 +95,10 @@
         .charge(-200)
         .linkDistance(50)
         .size(getSvgSize());
-    window.onresize = function() {
+    window.addEventListener("resize", function() {
         force.size(getSvgSize());
         force.resume();
-    };
+    });
 
     var scrollX = 0;
     var scrollY = 0;
@@ -232,9 +232,9 @@
         update(r.graph);
     });
 
-    document.onkeydown = function() {
+    document.addEventListener("keydown", function() {
         d3.select("#query")[0][0].focus();
-    };
+    });
 
     d3.select("#query").on("input", function() {
         var query = this.value;
@@ -261,7 +261,7 @@
         force.start();
         e.preventDefault();
     }
-    document.onwheel = on_wheel;
-    document.onmousewheel = on_wheel;
-    document.onDOMMouseScroll = on_wheel;
+    document.addEventListener("wheel", on_wheel);
+    document.addEventListener("mousewheel", on_wheel);
+    document.addEventListener("DOMMouseScroll", on_wheel);
 })();
