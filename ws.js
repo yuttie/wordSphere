@@ -220,16 +220,21 @@
 
     var synsets = null;
     d3.json(data_name, function(error, data) {
-        synsets = data;
-
-        var r = extract_graph(synsets, "", 50);
-        if (r.num_synsets_checked < synsets.length) {
-            d3.select("#message").text("(+50 synsets found)");
+        if (error) {
+            console.log(error.status, error.statusText);
         }
         else {
-            d3.select("#message").text("(" + r.num_synsets_matched + " synsets found)");
+            synsets = data;
+
+            var r = extract_graph(synsets, "", 50);
+            if (r.num_synsets_checked < synsets.length) {
+                d3.select("#message").text("(+50 synsets found)");
+            }
+            else {
+                d3.select("#message").text("(" + r.num_synsets_matched + " synsets found)");
+            }
+            update(r.graph);
         }
-        update(r.graph);
     });
 
     document.addEventListener("keydown", function() {
