@@ -178,6 +178,7 @@
         });
         // for touch devices
         d3.select("svg").on("touchstart", function() {
+            d3.event.preventDefault();
             if (!grab) {
                 var t = d3.event.changedTouches[0];
                 grab = {
@@ -188,9 +189,9 @@
                     scrollY: scrollY
                 };
             }
-            d3.event.preventDefault();
         });
         d3.select("svg").on("touchmove", function() {
+            d3.event.preventDefault();
             if (grab) {
                 for (var i = 0; i < d3.event.changedTouches.length; ++i) {
                     var t = d3.event.changedTouches[i];
@@ -202,9 +203,9 @@
                     }
                 }
             }
-            d3.event.preventDefault();
         });
         d3.select("svg").on("touchend", function() {
+            d3.event.preventDefault();
             if (grab) {
                 for (var i = 0; i < d3.event.changedTouches.length; ++i) {
                     var t = d3.event.changedTouches[i];
@@ -214,7 +215,6 @@
                     }
                 }
             }
-            d3.event.preventDefault();
         });
     }
 
