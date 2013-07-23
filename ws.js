@@ -249,6 +249,8 @@
     });
 
     function on_wheel(e) {
+        e.stopPropagation();
+        e.preventDefault();
         var delta =   e.deltaY       // 'wheel' event
                   || -e.wheelDeltaY  // Webkit's mousewheel event
                   || -e.wheelDelta;  // other's mousewheel event
@@ -259,7 +261,6 @@
             force.charge(force.charge() - 50);
         }
         force.start();
-        e.preventDefault();
     }
     document.addEventListener("wheel", on_wheel);
     document.addEventListener("mousewheel", on_wheel);
