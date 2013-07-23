@@ -93,12 +93,11 @@
     var color = d3.scale.category20();
     var force = d3.layout.force()
         .charge(-200)
-        .linkDistance(50)
         .size(getSvgSize());
-    window.onresize = function() {
+    window.addEventListener("resize", function() {
         force.size(getSvgSize());
         force.resume();
-    };
+    });
 
     var scrollX = 0;
     var scrollY = 0;
@@ -106,6 +105,7 @@
 
     function update(graph) {
         force
+            .linkDistance(50)
             .nodes(graph.nodes)
             .links(graph.links)
             .start();
@@ -178,6 +178,7 @@
         });
         // for touch devices
         d3.select("svg").on("touchstart", function() {
+            d3.event.preventDefault();
             if (!grab) {
                 var t = d3.event.changedTouches[0];
                 grab = {
@@ -188,9 +189,9 @@
                     scrollY: scrollY
                 };
             }
-            d3.event.preventDefault();
         });
         d3.select("svg").on("touchmove", function() {
+            d3.event.preventDefault();
             if (grab) {
                 for (var i = 0; i < d3.event.changedTouches.length; ++i) {
                     var t = d3.event.changedTouches[i];
@@ -202,9 +203,9 @@
                     }
                 }
             }
-            d3.event.preventDefault();
         });
         d3.select("svg").on("touchend", function() {
+            d3.event.preventDefault();
             if (grab) {
                 for (var i = 0; i < d3.event.changedTouches.length; ++i) {
                     var t = d3.event.changedTouches[i];
@@ -214,27 +215,104 @@
                     }
                 }
             }
-            d3.event.preventDefault();
+        });
+    }
+
+    function toGraph(str) {
+        var ws = str.split(/\s/);
+
+        var graph = { nodes: [], links: [] };
+        graph.nodes[0] = { id: 0, text: ws[0] };
+
+        for (var i = 1; i < ws.length; ++i) {
+            graph.nodes.push({ id: i, text: ws[i] });
+            graph.links.push({ source: i - 1, target: i });
+        }
+
+        return graph;
+    }
+
+    function showMessage(msg) {
+        var graph = toGraph(msg);
+
+        var link = svg.selectAll(".link")
+            .data(graph.links);
+        link
+            .enter().append("line")
+            .attr("class", "link");
+        link
+            .exit().remove();
+
+        var node = svg.selectAll(".node")
+            .data(graph.nodes, function(d) { return d.id; });
+        node
+            .enter().append("g")
+            .attr("class", "node");
+        node
+            .exit().remove();
+
+        node.selectAll("*").remove();
+        node.append("circle")
+            .attr("r", function(d) { return 10 * d.text.length; })
+            .style("fill", function(d) { return color(d.id); });
+        node.append("text")
+            .text(function(d) { return d.text; })
+            .attr("text-anchor", "middle")
+            .attr("dominant-baseline", "middle");
+
+        force.linkDistance(100);
+        force.nodes(graph.nodes).links(graph.links).start();
+        force.on("tick", function() {
+            // change the velocity (apply a force to it)
+            graph.nodes.forEach(function(d) {
+                var vx = (d.x - d.px);
+                var ax = 0.5 * (d.index - (graph.nodes.length - 1) / 2);
+                vx = vx + ax;
+                d.px = d.x - vx;
+            });
+            link.attr("x1", function(d) { return d.source.x; })
+                .attr("y1", function(d) { return d.source.y; })
+                .attr("x2", function(d) { return d.target.x; })
+                .attr("y2", function(d) { return d.target.y; });
+
+            node.attr("transform", function(d) { return "translate(" + d.x + ", " + d.y + ")"; });
+            force.resume();
         });
     }
 
     var synsets = null;
-    d3.json(data_name, function(error, data) {
-        synsets = data;
-
-        var r = extract_graph(synsets, "", 50);
-        if (r.num_synsets_checked < synsets.length) {
-            d3.select("#message").text("(+50 synsets found)");
+    showMessage("Now Loading . . .");
+    var xhr = d3.json(data_name);
+    xhr.on("progress", function() {
+        var pe = d3.event;
+        if (pe.lengthComputable) {
+            console.log(pe.loaded, pe.total);
         }
         else {
-            d3.select("#message").text("(" + r.num_synsets_matched + " synsets found)");
+            console.log(pe.loaded);
         }
-        update(r.graph);
+    });
+    xhr.get(function(error, data) {
+        if (error) {
+            showMessage(error.status + " " + error.statusText);
+        }
+        else {
+            synsets = data;
+
+            var r = extract_graph(synsets, "", 50);
+            if (r.num_synsets_checked < synsets.length) {
+                d3.select("#message").text("(+50 synsets found)");
+            }
+            else {
+                d3.select("#message").text("(" + r.num_synsets_matched + " synsets found)");
+            }
+            update(r.graph);
+        }
     });
 
-    document.onkeydown = function() {
+    document.addEventListener("keydown", function() {
         d3.select("#query")[0][0].focus();
-    };
+    });
 
     d3.select("#query").on("input", function() {
         var query = this.value;
@@ -249,6 +327,8 @@
     });
 
     function on_wheel(e) {
+        e.stopPropagation();
+        e.preventDefault();
         var delta =   e.deltaY       // 'wheel' event
                   || -e.wheelDeltaY  // Webkit's mousewheel event
                   || -e.wheelDelta;  // other's mousewheel event
@@ -259,9 +339,8 @@
             force.charge(force.charge() - 50);
         }
         force.start();
-        e.preventDefault();
     }
-    document.onwheel = on_wheel;
-    document.onmousewheel = on_wheel;
-    document.onDOMMouseScroll = on_wheel;
+    document.addEventListener("wheel", on_wheel);
+    document.addEventListener("mousewheel", on_wheel);
+    document.addEventListener("DOMMouseScroll", on_wheel);
 })();
