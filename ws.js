@@ -93,7 +93,6 @@
     var color = d3.scale.category20();
     var force = d3.layout.force()
         .charge(-200)
-        .linkDistance(50)
         .size(getSvgSize());
     window.addEventListener("resize", function() {
         force.size(getSvgSize());
@@ -106,6 +105,7 @@
 
     function update(graph) {
         force
+            .linkDistance(50)
             .nodes(graph.nodes)
             .links(graph.links)
             .start();
@@ -218,7 +218,70 @@
         });
     }
 
+    function toGraph(str) {
+        var ws = str.split(/\s/);
+
+        var graph = { nodes: [], links: [] };
+        graph.nodes[0] = { id: 0, text: ws[0] };
+
+        for (var i = 1; i < ws.length; ++i) {
+            graph.nodes.push({ id: i, text: ws[i] });
+            graph.links.push({ source: i - 1, target: i });
+        }
+
+        return graph;
+    }
+
+    function showMessage(msg) {
+        var graph = toGraph(msg);
+
+        var link = svg.selectAll(".link")
+            .data(graph.links);
+        link
+            .enter().append("line")
+            .attr("class", "link");
+        link
+            .exit().remove();
+
+        var node = svg.selectAll(".node")
+            .data(graph.nodes, function(d) { return d.id; });
+        node
+            .enter().append("g")
+            .attr("class", "node");
+        node
+            .exit().remove();
+
+        node.selectAll("*").remove();
+        node.append("circle")
+            .attr("r", function(d) { return 10 * d.text.length; })
+            .style("fill", function(d) { return color(d.id); });
+        node.append("text")
+            .text(function(d) { return d.text; })
+            .attr("text-anchor", "middle")
+            .attr("dominant-baseline", "middle");
+
+        force.linkDistance(100);
+        force.nodes(graph.nodes).links(graph.links).start();
+        force.on("tick", function() {
+            // change the velocity (apply a force to it)
+            graph.nodes.forEach(function(d) {
+                var vx = (d.x - d.px);
+                var ax = 0.5 * (d.index - (graph.nodes.length - 1) / 2);
+                vx = vx + ax;
+                d.px = d.x - vx;
+            });
+            link.attr("x1", function(d) { return d.source.x; })
+                .attr("y1", function(d) { return d.source.y; })
+                .attr("x2", function(d) { return d.target.x; })
+                .attr("y2", function(d) { return d.target.y; });
+
+            node.attr("transform", function(d) { return "translate(" + d.x + ", " + d.y + ")"; });
+            force.resume();
+        });
+    }
+
     var synsets = null;
+    showMessage("Now Loading . . .");
     var xhr = d3.json(data_name);
     xhr.on("progress", function() {
         var pe = d3.event;
@@ -231,7 +294,7 @@
     });
     xhr.get(function(error, data) {
         if (error) {
-            console.log(error.status, error.statusText);
+            showMessage(error.status + " " + error.statusText);
         }
         else {
             synsets = data;
