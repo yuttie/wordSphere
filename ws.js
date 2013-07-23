@@ -219,7 +219,17 @@
     }
 
     var synsets = null;
-    d3.json(data_name, function(error, data) {
+    var xhr = d3.json(data_name);
+    xhr.on("progress", function() {
+        var pe = d3.event;
+        if (pe.lengthComputable) {
+            console.log(pe.loaded, pe.total);
+        }
+        else {
+            console.log(pe.loaded);
+        }
+    });
+    xhr.get(function(error, data) {
         if (error) {
             console.log(error.status, error.statusText);
         }
