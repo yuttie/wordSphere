@@ -72,6 +72,7 @@
     }
 
     var data_name = "synsets.json";
+    var limit = 100;
     getopt(function(key, value) {
         switch (key) {
         case "lang":
@@ -85,6 +86,15 @@
             default:
                 alert('No data available for language "' + value + '".');
                 break;
+            }
+            break;
+        case "limit":
+            value = parseInt(value);
+            if (isNaN(value)) {
+                limit = 50;
+            }
+            else {
+                limit = value;
             }
             break;
         }
@@ -299,9 +309,9 @@
         else {
             synsets = data;
 
-            var r = extract_graph(synsets, "", 50);
+            var r = extract_graph(synsets, "", limit);
             if (r.num_synsets_checked < synsets.length) {
-                d3.select("#message").text("(+50 synsets found)");
+                d3.select("#message").text(`(+${limit} synsets found)`);
             }
             else {
                 d3.select("#message").text("(" + r.num_synsets_matched + " synsets found)");
@@ -316,9 +326,9 @@
 
     d3.select("#query").on("input", function() {
         var query = this.value;
-        var r = extract_graph(synsets, query, 50);
+        var r = extract_graph(synsets, query, limit);
         if (r.num_synsets_checked < synsets.length) {
-            d3.select("#message").text("(+50 synsets found)");
+            d3.select("#message").text(`(+${limit} synsets found)`);
         }
         else {
             d3.select("#message").text("(" + r.num_synsets_matched + " synsets found)");
