@@ -293,6 +293,14 @@
 
   function update(graph) {
     currentGraph = graph;
+
+    forceLink.distance(50);
+    forceManyBody.strength(function(d) {
+      return -(20**scale);
+    });
+    forceX.strength(0.04);
+    forceY.strength(0.04);
+
     simulation
       .nodes(graph.nodes)
       .on("tick", draw);
@@ -340,6 +348,7 @@
       d.x = 100 * i;
       d.y = 100 * (2 * Math.random() - 1);
     });
+
     forceLink.distance(function(l) {
       let r1 = 10 * l.source.text.length + 10;
       let r2 = 10 * l.target.text.length + 10;
@@ -350,6 +359,7 @@
     });
     forceX.strength(0.001);
     forceY.strength(0.004);
+
     simulation
       .nodes(graph.nodes)
       .on("tick", drawMessage);
@@ -370,13 +380,6 @@
       d3.select("#message").text("(" + r.num_synsets_matched + " synsets found)");
     }
 
-    forceLink.distance(50);
-    forceManyBody.strength(function(d) {
-      return -(20**scale);
-    });
-    forceX.strength(0.04);
-    forceY.strength(0.04);
-
     update(r.graph);
   });
 
@@ -393,6 +396,7 @@
     else {
       d3.select("#message").text("(" + r.num_synsets_matched + " synsets found)");
     }
+
     update(r.graph);
   });
 
