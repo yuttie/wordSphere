@@ -113,7 +113,7 @@
     if (d3.event.which === 1 && grab) {
       scrollX = grab.scrollX + (d3.event.pageX - grab.pageX);
       scrollY = grab.scrollY + (d3.event.pageY - grab.pageY);
-      update_position();
+      draw();
     }
   });
   d3.select("canvas").on("mouseup", function() {
@@ -143,7 +143,7 @@
         if (t.identifier === grab.tid) {
           scrollX = grab.scrollX + (t.pageX - grab.pageX);
           scrollY = grab.scrollY + (t.pageY - grab.pageY);
-          update_position();
+          draw();
           break;
         }
       }
@@ -184,7 +184,7 @@
     .force("center", forceCenter)
     .force("x", forceX)
     .force("y", forceY)
-    .on("tick", update_position);
+    .on("tick", draw);
   var canvas = document.querySelector("canvas");
   window.addEventListener("resize", function() {
     let [width, height] = getCanvasSize();
@@ -211,7 +211,7 @@
       .on("drag", dragged)
       .on("end", dragended));
   var currentGraph = null;
-  function update_position() {
+  function draw() {
     if (!currentGraph) return;
 
     let [width, height] = getCanvasSize();
