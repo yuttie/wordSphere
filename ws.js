@@ -248,11 +248,54 @@
       ctx.stroke();
     });
   }
+  function drawMessage() {
+    if (!currentGraph) return;
+
+    let [width, height] = getCanvasSize();
+    let ctx = canvas.getContext("2d");
+
+    ctx.save();
+
+    ctx.clearRect(0, 0, width, height)
+
+    ctx.beginPath();
+    currentGraph.links.forEach((d) => {
+      ctx.moveTo(d.source.x, d.source.y);
+      ctx.lineTo(d.target.x, d.target.y);
+    });
+    ctx.strokeStyle = "#888";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 2;
+    currentGraph.nodes.forEach((d) => {
+      let radius = 10 * d.text.length + 10;
+      let fillColor = color(d.id / currentGraph.nodes.length);
+      let strokeColor = "white";
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, radius, 0, 2 * Math.PI);
+      ctx.fillStyle = fillColor;
+      ctx.fill();
+      ctx.stroke();
+    });
+
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#000";
+    ctx.font = "20px sans";
+    currentGraph.nodes.forEach((d) => {
+      ctx.fillText(d.text, d.x, d.y);
+    });
+
+    ctx.restore();
+  }
 
   function update(graph) {
     currentGraph = graph;
     simulation
-      .nodes(graph.nodes);
+      .nodes(graph.nodes)
+      .on("tick", draw);
     simulation.force("link")
       .links(graph.links);
   }
@@ -291,47 +334,27 @@
   }
 
   function showMessage(msg) {
-    // FIXME
-    // var graph = toGraph(msg);
-    // var numWords = graph.nodes.length;
-    //
-    // var link = svg.select("#links")
-    //   .selectAll("line")
-    //   .data(graph.links, function(d) { return d.id; });
-    // var node = svg.select("#nodes")
-    //   .selectAll("g")
-    //   .data(graph.nodes, function(d) { return d.id; });
-    // link.exit().remove();
-    // node.exit().remove();
-    // link = link.enter()
-    //   .append("line");
-    // node = node.enter()
-    //   .append("g");
-    // node.append("circle")
-    //   .attr("r", function(d) { return 10 * d.text.length + 10; })
-    //   .style("fill", function(d) { return color(d.id / numWords); });
-    // node.append("text")
-    //   .text(function(d) { return d.text; })
-    //   .attr("text-anchor", "middle")
-    //   .attr("dominant-baseline", "middle");
-    // graph.nodes.forEach(function(d, i) {
-    //   d.x = 100 * i;
-    //   d.y = 100 * (2 * Math.random() - 1);
-    // });
-    // forceLink.distance(function(l) {
-    //   let r1 = 10 * l.source.text.length + 10;
-    //   let r2 = 10 * l.target.text.length + 10;
-    //   return 1.5 * (r1 + r2);
-    // });
-    // forceManyBody.strength(function(d) {
-    //   return -5 * d.text.length;
-    // });
-    // forceX.strength(0.001);
-    // forceY.strength(0.004);
-    // simulation
-    //   .nodes(graph.nodes);
-    // simulation.force("link")
-    //   .links(graph.links);
+    var graph = toGraph(msg);
+    currentGraph = graph;
+    graph.nodes.forEach(function(d, i) {
+      d.x = 100 * i;
+      d.y = 100 * (2 * Math.random() - 1);
+    });
+    forceLink.distance(function(l) {
+      let r1 = 10 * l.source.text.length + 10;
+      let r2 = 10 * l.target.text.length + 10;
+      return 1.5 * (r1 + r2);
+    });
+    forceManyBody.strength(function(d) {
+      return -5 * d.text.length;
+    });
+    forceX.strength(0.001);
+    forceY.strength(0.004);
+    simulation
+      .nodes(graph.nodes)
+      .on("tick", drawMessage);
+    simulation.force("link")
+      .links(graph.links);
   }
 
   var synsets = null;
