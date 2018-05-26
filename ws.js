@@ -162,7 +162,11 @@
     }
   });
 
-  var color = d3.interpolateRainbow;
+  var color = function(h) {
+    let colorStr = d3.interpolateRainbow(h);
+    let result = /rgb\((\d+), (\d+), (\d+)\)/.exec(colorStr);
+    return parseInt(result[1]) * 0x10000 + parseInt(result[2]) * 0x100 + parseInt(result[3]) * 0x1;
+  };
   let [width, height] = getCanvasSize();
   let scale = 1.0;
   let forceLink = d3.forceLink()
@@ -183,13 +187,18 @@
     .force("charge", forceManyBody)
     .force("center", forceCenter)
     .force("x", forceX)
-    .force("y", forceY)
-    .on("tick", draw);
-  var canvas = document.querySelector("canvas");
+    .force("y", forceY);
+  const app = new PIXI.Application({
+    backgroundColor: 0xffffff,
+    antialias: true,
+    resolution: 2,
+  });
+  app.renderer.autoResize = true;
+  document.body.insertBefore(app.view, document.body.firstChild);
+  var canvas = app.view;
   window.addEventListener("resize", function() {
     let [width, height] = getCanvasSize();
-    canvas.width = width;
-    canvas.height = height;
+    app.renderer.resize(width, height);
     forceCenter.x(width / 2);
     forceCenter.y(height / 2);
     forceX.x(width / 2);
@@ -197,8 +206,11 @@
   });
   window.addEventListener("DOMContentLoaded", function() {
     let [width, height] = getCanvasSize();
-    canvas.width = width;
-    canvas.height = height;
+    app.renderer.resize(width, height);
+    forceCenter.x(width / 2);
+    forceCenter.y(height / 2);
+    forceX.x(width / 2);
+    forceY.y(height / 2);
   });
 
   var scrollX = 0;
@@ -214,85 +226,82 @@
   function draw() {
     if (!currentGraph) return;
 
-    let [width, height] = getCanvasSize();
-    let ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, width, height)
-
-    ctx.beginPath();
-    currentGraph.links.forEach((d) => {
-      ctx.moveTo(d.source.x, d.source.y);
-      ctx.lineTo(d.target.x, d.target.y);
-    });
-    ctx.strokeStyle = "#888";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    currentGraph.nodes.forEach((d) => {
-      if (d.word) {
-        // FIXME Coloring according to d.matched is not implemented
-        ctx.fillStyle = "#666";
-        ctx.fillText(d.word, d.x + 8, d.y + 4);
-      }
+    currentGraph.links.forEach(d => {
+      let line = d.graphics;
+      line.clear();
+      line.lineStyle(2, 0x888888, 1);
+      line.moveTo(d.source.x, d.source.y);
+      line.lineTo(d.target.x, d.target.y);
     });
 
-    ctx.strokeStyle = "white";
-    ctx.lineWidth = 2;
-    currentGraph.nodes.forEach((d) => {
-      let radius = d.word ? 5 : 10;
-      let fillColor = d.word ? "gray" : color((d.synset_id % limit) / limit);
-      let strokeColor = "white";
-      ctx.beginPath();
-      ctx.arc(d.x, d.y, radius, 0, 2 * Math.PI);
-      ctx.fillStyle = fillColor;
-      ctx.fill();
-      ctx.stroke();
+    currentGraph.nodes.forEach(d => {
+      let container = d.graphics;
+      container.x = d.x;
+      container.y = d.y;
     });
   }
+
   function drawMessage() {
     if (!currentGraph) return;
 
-    let [width, height] = getCanvasSize();
-    let ctx = canvas.getContext("2d");
-
-    ctx.save();
-
-    ctx.clearRect(0, 0, width, height)
-
-    ctx.beginPath();
-    currentGraph.links.forEach((d) => {
-      ctx.moveTo(d.source.x, d.source.y);
-      ctx.lineTo(d.target.x, d.target.y);
-    });
-    ctx.strokeStyle = "#888";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    ctx.strokeStyle = "white";
-    ctx.lineWidth = 2;
-    currentGraph.nodes.forEach((d) => {
-      let radius = 10 * d.text.length + 10;
-      let fillColor = color(d.id / currentGraph.nodes.length);
-      let strokeColor = "white";
-      ctx.beginPath();
-      ctx.arc(d.x, d.y, radius, 0, 2 * Math.PI);
-      ctx.fillStyle = fillColor;
-      ctx.fill();
-      ctx.stroke();
+    currentGraph.links.forEach(d => {
+      let line = d.graphics;
+      line.clear();
+      line.lineStyle(2, 0x888888, 1);
+      line.moveTo(d.source.x, d.source.y);
+      line.lineTo(d.target.x, d.target.y);
     });
 
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillStyle = "#000";
-    ctx.font = "20px sans";
-    currentGraph.nodes.forEach((d) => {
-      ctx.fillText(d.text, d.x, d.y);
+    currentGraph.nodes.forEach(d => {
+      let container = d.graphics;
+      container.x = d.x;
+      container.y = d.y;
     });
-
-    ctx.restore();
   }
 
   function update(graph) {
     currentGraph = graph;
+
+    app.stage.removeChildren();
+
+    graph.links.forEach(d => {
+      let line = new PIXI.Graphics();
+      line.lineStyle(2, 0x888888, 1);
+      line.moveTo(d.source.x, d.source.y);
+      line.lineTo(d.target.x, d.target.y);
+      app.stage.addChild(line);
+      d.graphics = line;
+    });
+
+    let textStyle = new PIXI.TextStyle({
+      fontSize: 12,
+      fill: "#666",
+    });
+    graph.nodes.forEach(d => {
+      let radius = d.word ? 5 : 10;
+      let fillColor = d.word ? 0x888888 : color((d.synset_id % limit) / limit);
+      let container = new PIXI.Container();
+      let circle = new PIXI.Graphics();
+      circle.lineStyle(2, 0xffffff, 1);
+      circle.beginFill(fillColor)
+      circle.drawCircle(0, 0, radius)
+      circle.endFill()
+      container.addChild(circle);
+
+      if (d.word) {
+        // FIXME Coloring according to d.matched is not implemented
+        let text = new PIXI.Text(d.word, textStyle);
+        text.anchor.set(0, 0.6);
+        text.x = 8;
+        text.y = 0;
+        container.addChild(text);
+      }
+
+      container.x = d.x
+      container.y = d.y
+      app.stage.addChild(container);
+      d.graphics = container;
+    });
 
     forceLink.distance(50);
     forceManyBody.strength(function(d) {
@@ -344,9 +353,46 @@
   function showMessage(msg) {
     var graph = toGraph(msg);
     currentGraph = graph;
+
     graph.nodes.forEach(function(d, i) {
       d.x = 100 * i;
       d.y = 100 * (2 * Math.random() - 1);
+    });
+
+    app.stage.removeChildren();
+
+    graph.links.forEach(d => {
+      let line = new PIXI.Graphics();
+      line.lineStyle(2, 0x888888, 1);
+      line.moveTo(d.source.x, d.source.y);
+      line.lineTo(d.target.x, d.target.y);
+      app.stage.addChild(line);
+      d.graphics = line;
+    });
+
+    let textStyle = new PIXI.TextStyle({
+      fontSize: 20,
+      fill: "#000",
+    });
+    graph.nodes.forEach(d => {
+      let radius = 10 * d.text.length + 10;
+      let fillColor = color(d.id / currentGraph.nodes.length);
+      let container = new PIXI.Container();
+      let circle = new PIXI.Graphics();
+      circle.lineStyle(2, 0xffffff, 1);
+      circle.beginFill(fillColor)
+      circle.drawCircle(0, 0, radius)
+      circle.endFill()
+      container.addChild(circle);
+
+      let text = new PIXI.Text(d.text, textStyle);
+      text.anchor.set(0.5, 0.5);
+      container.addChild(text);
+
+      container.x = d.x
+      container.y = d.y
+      app.stage.addChild(container);
+      d.graphics = container;
     });
 
     forceLink.distance(function(l) {
