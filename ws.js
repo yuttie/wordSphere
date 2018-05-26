@@ -241,24 +241,6 @@
     });
   }
 
-  function drawMessage() {
-    if (!currentGraph) return;
-
-    currentGraph.links.forEach(d => {
-      let line = d.graphics;
-      line.clear();
-      line.lineStyle(2, 0x888888, 1);
-      line.moveTo(d.source.x, d.source.y);
-      line.lineTo(d.target.x, d.target.y);
-    });
-
-    currentGraph.nodes.forEach(d => {
-      let container = d.graphics;
-      container.x = d.x;
-      container.y = d.y;
-    });
-  }
-
   function update(graph) {
     currentGraph = graph;
 
@@ -408,7 +390,7 @@
 
     simulation
       .nodes(graph.nodes)
-      .on("tick", drawMessage);
+      .on("tick", draw);
     simulation.force("link")
       .links(graph.links);
   }
