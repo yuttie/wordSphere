@@ -182,8 +182,6 @@
     grab = null;
   });
 
-  var scrollX = 0;
-  var scrollY = 0;
   d3.select(canvas)
     .call(d3.drag()
       .container(canvas)
