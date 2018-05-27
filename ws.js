@@ -134,7 +134,6 @@
   const layer = new PIXI.Container();
   app.stage.addChild(layer);
   document.body.insertBefore(app.view, document.body.firstChild);
-  var canvas = app.view;
   window.addEventListener("resize", function() {
     let [width, height] = getCanvasSize();
     app.renderer.resize(width, height);
@@ -291,25 +290,6 @@
       .on("tick", draw);
     simulation.force("link")
       .links(graph.links);
-  }
-
-  function dragsubject() {
-    return simulation.find(d3.event.x, d3.event.y, 10);
-  }
-
-  function dragstarted(d) {
-    d3.event.subject.fx = d3.event.subject.x;
-    d3.event.subject.fy = d3.event.subject.y;
-  }
-
-  function dragged(d) {
-    d3.event.subject.fx = d3.event.x;
-    d3.event.subject.fy = d3.event.y;
-  }
-
-  function dragended(d) {
-    d3.event.subject.fx = null;
-    d3.event.subject.fy = null;
   }
 
   function toGraph(str) {
