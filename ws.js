@@ -98,70 +98,6 @@
     }
   });
 
-  var grab = null;
-  d3.select("canvas").on("mousedown", function() {
-    if (d3.event.which === 1) {
-      grab = {
-        pageX: d3.event.pageX,
-        pageY: d3.event.pageY,
-        scrollX: scrollX,
-        scrollY: scrollY
-      };
-    }
-  });
-  d3.select("canvas").on("mousemove", function() {
-    if (d3.event.which === 1 && grab) {
-      scrollX = grab.scrollX + (d3.event.pageX - grab.pageX);
-      scrollY = grab.scrollY + (d3.event.pageY - grab.pageY);
-      draw();
-    }
-  });
-  d3.select("canvas").on("mouseup", function() {
-    if (d3.event.which === 1) {
-      grab = null;
-    }
-  });
-  // for touch devices
-  d3.select("canvas").on("touchstart", function() {
-    d3.event.preventDefault();
-    if (!grab) {
-      var t = d3.event.changedTouches[0];
-      grab = {
-        tid: t.identifier,
-        pageX: t.pageX,
-        pageY: t.pageY,
-        scrollX: scrollX,
-        scrollY: scrollY
-      };
-    }
-  });
-  d3.select("canvas").on("touchmove", function() {
-    d3.event.preventDefault();
-    if (grab) {
-      for (var i = 0; i < d3.event.changedTouches.length; ++i) {
-        var t = d3.event.changedTouches[i];
-        if (t.identifier === grab.tid) {
-          scrollX = grab.scrollX + (t.pageX - grab.pageX);
-          scrollY = grab.scrollY + (t.pageY - grab.pageY);
-          draw();
-          break;
-        }
-      }
-    }
-  });
-  d3.select("canvas").on("touchend", function() {
-    d3.event.preventDefault();
-    if (grab) {
-      for (var i = 0; i < d3.event.changedTouches.length; ++i) {
-        var t = d3.event.changedTouches[i];
-        if (t.identifier === grab.tid) {
-          grab = null;
-          break;
-        }
-      }
-    }
-  });
-
   var color = function(h) {
     let colorStr = d3.interpolateRainbow(h);
     let result = /rgb\((\d+), (\d+), (\d+)\)/.exec(colorStr);
@@ -176,10 +112,10 @@
     .strength(function() {
       return -(20**scale);
     });
-  let forceCenter = d3.forceCenter(width / 2, height / 2);
-  let forceX = d3.forceX(width / 2)
+  let forceCenter = d3.forceCenter(0, 0);
+  let forceX = d3.forceX(0)
     .strength(0.04);
-  let forceY = d3.forceY(height / 2)
+  let forceY = d3.forceY(0)
     .strength(0.04);
   let simulation = d3.forceSimulation()
     .alphaTarget(1)
@@ -194,23 +130,56 @@
     resolution: 2,
   });
   app.renderer.autoResize = true;
+  app.stage.interactive = true;
+  const layer = new PIXI.Container();
+  app.stage.addChild(layer);
   document.body.insertBefore(app.view, document.body.firstChild);
   var canvas = app.view;
   window.addEventListener("resize", function() {
     let [width, height] = getCanvasSize();
     app.renderer.resize(width, height);
-    forceCenter.x(width / 2);
-    forceCenter.y(height / 2);
-    forceX.x(width / 2);
-    forceY.y(height / 2);
+
+    // Center the origin of the stage
+    app.stage.x = width / 2;
+    app.stage.y = height / 2;
+    app.stage.hitArea = app.screen.clone();
+    app.stage.hitArea.x = -width / 2;
+    app.stage.hitArea.y = -height / 2;
   });
   window.addEventListener("DOMContentLoaded", function() {
     let [width, height] = getCanvasSize();
     app.renderer.resize(width, height);
-    forceCenter.x(width / 2);
-    forceCenter.y(height / 2);
-    forceX.x(width / 2);
-    forceY.y(height / 2);
+
+    // Center the origin of the stage
+    app.stage.x = width / 2;
+    app.stage.y = height / 2;
+    app.stage.hitArea = app.screen.clone();
+    app.stage.hitArea.x = -width / 2;
+    app.stage.hitArea.y = -height / 2;
+  });
+
+  let grab = null;
+  app.stage.on("pointerdown", e => {
+    const initLayerPosition = new PIXI.Point(layer.position.x, layer.position.y);
+    grab = {
+      initLayerPosition: initLayerPosition,
+      initPointerPosition: e.data.global.clone(),
+      data: e.data,
+    };
+  });
+  app.stage.on("pointermove", e => {
+    if (grab) {
+      const dx = grab.data.global.x - grab.initPointerPosition.x;
+      const dy = grab.data.global.y - grab.initPointerPosition.y;
+      layer.position.x = grab.initLayerPosition.x + dx;
+      layer.position.y = grab.initLayerPosition.y + dy;
+    }
+  });
+  app.stage.on("pointerup", e => {
+    grab = null;
+  });
+  app.stage.on("pointerupoutside", e => {
+    grab = null;
   });
 
   var scrollX = 0;
@@ -244,14 +213,14 @@
   function update(graph) {
     currentGraph = graph;
 
-    app.stage.removeChildren();
+    layer.removeChildren();
 
     graph.links.forEach(d => {
       let line = new PIXI.Graphics();
       line.lineStyle(2, 0x888888, 1);
       line.moveTo(d.source.x, d.source.y);
       line.lineTo(d.target.x, d.target.y);
-      app.stage.addChild(line);
+      layer.addChild(line);
       d.graphics = line;
     });
 
@@ -281,7 +250,7 @@
 
       container.x = d.x
       container.y = d.y
-      app.stage.addChild(container);
+      layer.addChild(container);
       d.graphics = container;
     });
 
@@ -341,14 +310,14 @@
       d.y = 100 * (2 * Math.random() - 1);
     });
 
-    app.stage.removeChildren();
+    layer.removeChildren();
 
     graph.links.forEach(d => {
       let line = new PIXI.Graphics();
       line.lineStyle(2, 0x888888, 1);
       line.moveTo(d.source.x, d.source.y);
       line.lineTo(d.target.x, d.target.y);
-      app.stage.addChild(line);
+      layer.addChild(line);
       d.graphics = line;
     });
 
@@ -373,7 +342,7 @@
 
       container.x = d.x
       container.y = d.y
-      app.stage.addChild(container);
+      layer.addChild(container);
       d.graphics = container;
     });
 
