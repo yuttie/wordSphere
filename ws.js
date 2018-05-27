@@ -168,7 +168,13 @@
     };
   });
   app.stage.on("pointermove", e => {
-    if (grab) {
+    if (nodeGrab) {
+      const dx = nodeGrab.data.global.x - nodeGrab.initPointerPosition.x;
+      const dy = nodeGrab.data.global.y - nodeGrab.initPointerPosition.y;
+      nodeGrab.node.fx = nodeGrab.initNodePosition.x + dx;
+      nodeGrab.node.fy = nodeGrab.initNodePosition.y + dy;
+    }
+    else if (grab) {
       const dx = grab.data.global.x - grab.initPointerPosition.x;
       const dy = grab.data.global.y - grab.initPointerPosition.y;
       layer.position.x = grab.initLayerPosition.x + dx;
@@ -176,19 +182,22 @@
     }
   });
   app.stage.on("pointerup", e => {
+    if (nodeGrab) {
+      nodeGrab.node.fx = null;
+      nodeGrab.node.fy = null;
+    }
+    nodeGrab = null;
     grab = null;
   });
   app.stage.on("pointerupoutside", e => {
+    if (nodeGrab) {
+      nodeGrab.node.fx = null;
+      nodeGrab.node.fy = null;
+    }
+    nodeGrab = null;
     grab = null;
   });
 
-  d3.select(canvas)
-    .call(d3.drag()
-      .container(canvas)
-      .subject(dragsubject)
-      .on("start", dragstarted)
-      .on("drag", dragged)
-      .on("end", dragended));
   var currentGraph = null;
   function draw() {
     if (!currentGraph) return;
@@ -205,6 +214,21 @@
       let container = d.graphics;
       container.x = d.x;
       container.y = d.y;
+    });
+  }
+
+  let nodeGrab = null;
+  function makeNodeDraggable(graphics, node) {
+    graphics.on("pointerdown", e => {
+      const initNodePosition = new PIXI.Point(node.x, node.y);
+      nodeGrab = {
+        initNodePosition: initNodePosition,
+        initPointerPosition: e.data.global.clone(),
+        node: node,
+        data: e.data,
+      };
+
+      e.stopPropagation();
     });
   }
 
@@ -230,6 +254,9 @@
       let radius = d.word ? 5 : 10;
       let fillColor = d.word ? 0x888888 : color((d.synset_id % limit) / limit);
       let container = new PIXI.Container();
+      container.interactive = true;
+      container.buttonMode = true;
+      makeNodeDraggable(container, d);
       let circle = new PIXI.Graphics();
       circle.lineStyle(2, 0xffffff, 1);
       circle.beginFill(fillColor)
