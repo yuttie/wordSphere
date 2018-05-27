@@ -56,10 +56,8 @@
     };
   }
 
-  function getSvgSize() {
-    var width = parseInt(d3.select("svg").style("width"));
-    var height = parseInt(d3.select("svg").style("height"));
-    return [width, height];
+  function getCanvasSize() {
+    return [window.innerWidth, window.innerHeight];
   }
 
   function getopt(f) {
@@ -99,85 +97,13 @@
       break;
     }
   });
-  function update_position() {
-    svg.select("#links")
-      .selectAll("line")
-      .attr("x1", function(d) { return scrollX + d.source.x; })
-      .attr("y1", function(d) { return scrollY + d.source.y; })
-      .attr("x2", function(d) { return scrollX + d.target.x; })
-      .attr("y2", function(d) { return scrollY + d.target.y; });
 
-    svg.select("#nodes")
-      .selectAll("g")
-      .attr("transform", function(d) { return "translate(" + (scrollX + d.x) + ", " + (scrollY + d.y) + ")"; });
-  }
-
-  var grab = null;
-  d3.select("svg").on("mousedown", function() {
-    if (d3.event.which === 1) {
-      grab = {
-        pageX: d3.event.pageX,
-        pageY: d3.event.pageY,
-        scrollX: scrollX,
-        scrollY: scrollY
-      };
-    }
-  });
-  d3.select("svg").on("mousemove", function() {
-    if (d3.event.which === 1 && grab) {
-      scrollX = grab.scrollX + (d3.event.pageX - grab.pageX);
-      scrollY = grab.scrollY + (d3.event.pageY - grab.pageY);
-      update_position();
-    }
-  });
-  d3.select("svg").on("mouseup", function() {
-    if (d3.event.which === 1) {
-      grab = null;
-    }
-  });
-  // for touch devices
-  d3.select("svg").on("touchstart", function() {
-    d3.event.preventDefault();
-    if (!grab) {
-      var t = d3.event.changedTouches[0];
-      grab = {
-        tid: t.identifier,
-        pageX: t.pageX,
-        pageY: t.pageY,
-        scrollX: scrollX,
-        scrollY: scrollY
-      };
-    }
-  });
-  d3.select("svg").on("touchmove", function() {
-    d3.event.preventDefault();
-    if (grab) {
-      for (var i = 0; i < d3.event.changedTouches.length; ++i) {
-        var t = d3.event.changedTouches[i];
-        if (t.identifier === grab.tid) {
-          scrollX = grab.scrollX + (t.pageX - grab.pageX);
-          scrollY = grab.scrollY + (t.pageY - grab.pageY);
-          update_position();
-          break;
-        }
-      }
-    }
-  });
-  d3.select("svg").on("touchend", function() {
-    d3.event.preventDefault();
-    if (grab) {
-      for (var i = 0; i < d3.event.changedTouches.length; ++i) {
-        var t = d3.event.changedTouches[i];
-        if (t.identifier === grab.tid) {
-          grab = null;
-          break;
-        }
-      }
-    }
-  });
-
-  var color = d3.interpolateRainbow;
-  let [width, height] = getSvgSize();
+  var color = function(h) {
+    let colorStr = d3.interpolateRainbow(h);
+    let result = /rgb\((\d+), (\d+), (\d+)\)/.exec(colorStr);
+    return parseInt(result[1]) * 0x10000 + parseInt(result[2]) * 0x100 + parseInt(result[3]) * 0x1;
+  };
+  let [width, height] = getCanvasSize();
   let scale = 1.0;
   let forceLink = d3.forceLink()
     .id(function(d) { return d.id; })
@@ -186,10 +112,10 @@
     .strength(function() {
       return -(20**scale);
     });
-  let forceCenter = d3.forceCenter(width / 2, height / 2);
-  let forceX = d3.forceX(width / 2)
+  let forceCenter = d3.forceCenter(0, 0);
+  let forceX = d3.forceX(0)
     .strength(0.04);
-  let forceY = d3.forceY(height / 2)
+  let forceY = d3.forceY(0)
     .strength(0.04);
   let simulation = d3.forceSimulation()
     .alphaTarget(1)
@@ -197,69 +123,173 @@
     .force("charge", forceManyBody)
     .force("center", forceCenter)
     .force("x", forceX)
-    .force("y", forceY)
-    .on("tick", update_position);
+    .force("y", forceY);
+  const app = new PIXI.Application({
+    backgroundColor: 0xffffff,
+    antialias: true,
+    resolution: 2,
+  });
+  app.renderer.autoResize = true;
+  app.stage.interactive = true;
+  const layer = new PIXI.Container();
+  app.stage.addChild(layer);
+  document.body.insertBefore(app.view, document.body.firstChild);
   window.addEventListener("resize", function() {
-    let [width, height] = getSvgSize();
-    forceCenter.x(width / 2);
-    forceCenter.y(height / 2);
-    forceX.x(width / 2);
-    forceY.y(height / 2);
+    let [width, height] = getCanvasSize();
+    app.renderer.resize(width, height);
+
+    // Center the origin of the stage
+    app.stage.x = width / 2;
+    app.stage.y = height / 2;
+    app.stage.hitArea = app.screen.clone();
+    app.stage.hitArea.x = -width / 2;
+    app.stage.hitArea.y = -height / 2;
+  });
+  window.addEventListener("DOMContentLoaded", function() {
+    let [width, height] = getCanvasSize();
+    app.renderer.resize(width, height);
+
+    // Center the origin of the stage
+    app.stage.x = width / 2;
+    app.stage.y = height / 2;
+    app.stage.hitArea = app.screen.clone();
+    app.stage.hitArea.x = -width / 2;
+    app.stage.hitArea.y = -height / 2;
   });
 
-  var scrollX = 0;
-  var scrollY = 0;
-  var svg = d3.select("body svg");
-  svg.append("g")
-    .attr("id", "links");
-  svg.append("g")
-    .attr("id", "nodes");
+  let grab = null;
+  app.stage.on("pointerdown", e => {
+    const initLayerPosition = new PIXI.Point(layer.position.x, layer.position.y);
+    grab = {
+      initLayerPosition: initLayerPosition,
+      initPointerPosition: e.data.global.clone(),
+      data: e.data,
+    };
+  });
+  app.stage.on("pointermove", e => {
+    if (nodeGrab) {
+      const dx = nodeGrab.data.global.x - nodeGrab.initPointerPosition.x;
+      const dy = nodeGrab.data.global.y - nodeGrab.initPointerPosition.y;
+      nodeGrab.node.fx = nodeGrab.initNodePosition.x + dx;
+      nodeGrab.node.fy = nodeGrab.initNodePosition.y + dy;
+    }
+    else if (grab) {
+      const dx = grab.data.global.x - grab.initPointerPosition.x;
+      const dy = grab.data.global.y - grab.initPointerPosition.y;
+      layer.position.x = grab.initLayerPosition.x + dx;
+      layer.position.y = grab.initLayerPosition.y + dy;
+    }
+  });
+  app.stage.on("pointerup", e => {
+    if (nodeGrab) {
+      nodeGrab.node.fx = null;
+      nodeGrab.node.fy = null;
+    }
+    nodeGrab = null;
+    grab = null;
+  });
+  app.stage.on("pointerupoutside", e => {
+    if (nodeGrab) {
+      nodeGrab.node.fx = null;
+      nodeGrab.node.fy = null;
+    }
+    nodeGrab = null;
+    grab = null;
+  });
+
+  var currentGraph = null;
+  function draw() {
+    if (!currentGraph) return;
+
+    currentGraph.links.forEach(d => {
+      let line = d.graphics;
+      line.clear();
+      line.lineStyle(2, 0x888888, 1);
+      line.moveTo(d.source.x, d.source.y);
+      line.lineTo(d.target.x, d.target.y);
+    });
+
+    currentGraph.nodes.forEach(d => {
+      let container = d.graphics;
+      container.x = d.x;
+      container.y = d.y;
+    });
+  }
+
+  let nodeGrab = null;
+  function makeNodeDraggable(graphics, node) {
+    graphics.on("pointerdown", e => {
+      const initNodePosition = new PIXI.Point(node.x, node.y);
+      nodeGrab = {
+        initNodePosition: initNodePosition,
+        initPointerPosition: e.data.global.clone(),
+        node: node,
+        data: e.data,
+      };
+
+      e.stopPropagation();
+    });
+  }
 
   function update(graph) {
-    var link = svg.select("#links")
-      .selectAll("line")
-      .data(graph.links, function(d) { return d.id; });
-    var node = svg.select("#nodes")
-      .selectAll("g")
-      .data(graph.nodes, function(d) { return d.id; });
-    link.exit().remove();
-    node.exit().remove();
-    link = link.enter()
-      .append("line");
-    node = node.enter()
-      .append("g")
-      .call(d3.drag()
-        .on("start", dragstarted)
-        .on("drag", dragged)
-        .on("end", dragended));
-    node.append("circle")
-      .attr("r", function(d) { return d.word ? 5 : 10; })
-      .style("fill", function(d) { return d.word ? "gray" : color((d.synset_id % limit) / limit); });
-    node.filter(function(d) { return d.gloss; }).append("title")
-      .text(function(d) { return d.gloss; });
-    node.filter(function(d) { return d.word; }).append("text")
-      .text(function(d) { return d.word; })
-      .attr("transform", "translate(8, 4)")
-      .classed("non-matched", function(d) { return !d.matched; });
+    currentGraph = graph;
+
+    layer.removeChildren();
+
+    graph.links.forEach(d => {
+      let line = new PIXI.Graphics();
+      line.lineStyle(2, 0x888888, 1);
+      line.moveTo(d.source.x, d.source.y);
+      line.lineTo(d.target.x, d.target.y);
+      layer.addChild(line);
+      d.graphics = line;
+    });
+
+    let textStyle = new PIXI.TextStyle({
+      fontSize: 12,
+      fill: "#666",
+    });
+    graph.nodes.forEach(d => {
+      let radius = d.word ? 5 : 10;
+      let fillColor = d.word ? 0x888888 : color((d.synset_id % limit) / limit);
+      let container = new PIXI.Container();
+      container.interactive = true;
+      container.buttonMode = true;
+      makeNodeDraggable(container, d);
+      let circle = new PIXI.Graphics();
+      circle.lineStyle(2, 0xffffff, 1);
+      circle.beginFill(fillColor)
+      circle.drawCircle(0, 0, radius)
+      circle.endFill()
+      container.addChild(circle);
+
+      if (d.word) {
+        // FIXME Coloring according to d.matched is not implemented
+        let text = new PIXI.Text(d.word, textStyle);
+        text.anchor.set(0, 0.6);
+        text.x = 8;
+        text.y = 0;
+        container.addChild(text);
+      }
+
+      container.x = d.x
+      container.y = d.y
+      layer.addChild(container);
+      d.graphics = container;
+    });
+
+    forceLink.distance(50);
+    forceManyBody.strength(function(d) {
+      return -(20**scale);
+    });
+    forceX.strength(0.04);
+    forceY.strength(0.04);
+
     simulation
-      .nodes(graph.nodes);
+      .nodes(graph.nodes)
+      .on("tick", draw);
     simulation.force("link")
       .links(graph.links);
-  }
-
-  function dragstarted(d) {
-    d.fx = d.x;
-    d.fy = d.y;
-  }
-
-  function dragged(d) {
-    d.fx = d3.event.x;
-    d.fy = d3.event.y;
-  }
-
-  function dragended(d) {
-    d.fx = null;
-    d.fy = null;
   }
 
   function toGraph(str) {
@@ -278,31 +308,49 @@
 
   function showMessage(msg) {
     var graph = toGraph(msg);
-    var numWords = graph.nodes.length;
+    currentGraph = graph;
 
-    var link = svg.select("#links")
-      .selectAll("line")
-      .data(graph.links, function(d) { return d.id; });
-    var node = svg.select("#nodes")
-      .selectAll("g")
-      .data(graph.nodes, function(d) { return d.id; });
-    link.exit().remove();
-    node.exit().remove();
-    link = link.enter()
-      .append("line");
-    node = node.enter()
-      .append("g");
-    node.append("circle")
-      .attr("r", function(d) { return 10 * d.text.length + 10; })
-      .style("fill", function(d) { return color(d.id / numWords); });
-    node.append("text")
-      .text(function(d) { return d.text; })
-      .attr("text-anchor", "middle")
-      .attr("dominant-baseline", "middle");
     graph.nodes.forEach(function(d, i) {
       d.x = 100 * i;
       d.y = 100 * (2 * Math.random() - 1);
     });
+
+    layer.removeChildren();
+
+    graph.links.forEach(d => {
+      let line = new PIXI.Graphics();
+      line.lineStyle(2, 0x888888, 1);
+      line.moveTo(d.source.x, d.source.y);
+      line.lineTo(d.target.x, d.target.y);
+      layer.addChild(line);
+      d.graphics = line;
+    });
+
+    let textStyle = new PIXI.TextStyle({
+      fontSize: 20,
+      fill: "#000",
+    });
+    graph.nodes.forEach(d => {
+      let radius = 10 * d.text.length + 10;
+      let fillColor = color(d.id / currentGraph.nodes.length);
+      let container = new PIXI.Container();
+      let circle = new PIXI.Graphics();
+      circle.lineStyle(2, 0xffffff, 1);
+      circle.beginFill(fillColor)
+      circle.drawCircle(0, 0, radius)
+      circle.endFill()
+      container.addChild(circle);
+
+      let text = new PIXI.Text(d.text, textStyle);
+      text.anchor.set(0.5, 0.5);
+      container.addChild(text);
+
+      container.x = d.x
+      container.y = d.y
+      layer.addChild(container);
+      d.graphics = container;
+    });
+
     forceLink.distance(function(l) {
       let r1 = 10 * l.source.text.length + 10;
       let r2 = 10 * l.target.text.length + 10;
@@ -313,8 +361,10 @@
     });
     forceX.strength(0.001);
     forceY.strength(0.004);
+
     simulation
-      .nodes(graph.nodes);
+      .nodes(graph.nodes)
+      .on("tick", draw);
     simulation.force("link")
       .links(graph.links);
   }
@@ -332,13 +382,6 @@
       d3.select("#message").text("(" + r.num_synsets_matched + " synsets found)");
     }
 
-    forceLink.distance(50);
-    forceManyBody.strength(function(d) {
-      return -(20**scale);
-    });
-    forceX.strength(0.04);
-    forceY.strength(0.04);
-
     update(r.graph);
   });
 
@@ -355,6 +398,7 @@
     else {
       d3.select("#message").text("(" + r.num_synsets_matched + " synsets found)");
     }
+
     update(r.graph);
   });
 
