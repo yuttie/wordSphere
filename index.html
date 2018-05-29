@@ -13,17 +13,6 @@
           top: 0;
           left: 0;
       }
-      #nodes > g > circle {
-          stroke: #fff;
-          stroke-width: 2px;
-      }
-      #links > line {
-          stroke: #888;
-          stroke-width: 2px;
-      }
-      .non-matched {
-          fill: #ccc;
-      }
       #footer {
           position: absolute;
           bottom: 0;
@@ -32,7 +21,6 @@
       #control-box {
           margin: 0.25em auto;
           position: relative;
-          background: rgba(255, 255, 255, 0.8);
           width: 100%;
           max-width: 25em;
           bottom: 0;
@@ -41,13 +29,18 @@
           position: relative;
           background: transparent;
           font-size: 1.5em;
-          border: 1px solid gray;
+          background: rgba(252, 252, 252, 0.9);
+          border: 1px solid #e0e0e0;
           padding: 0.2em 0.5em;
           width: 100%;
           box-sizing: border-box;
+          font-family: serif;
+          font-weight: bold;
+          color: #444444;
+          text-shadow: 0px 0px 1px rgba(0, 0, 0, 0.3);
       }
       #message {
-          color: gray;
+          color: #ddd;
           position: absolute;
           top: 50%;
           right: 0.25em;
