@@ -260,7 +260,8 @@
     });
   }
 
-  function updateLayer(layer, graph) {
+  function updateLayer(layer, graph, omitText) {
+    omitText = !!omitText;
     layer.removeChildren();
 
     graph.links.forEach(d => {
@@ -290,7 +291,7 @@
       circle.endFill()
       container.addChild(circle);
 
-      if (d.word) {
+      if (!omitText && d.word) {
         // FIXME Coloring according to d.matched is not implemented
         let text = new PIXI.Text(d.word, textStyle);
         text.anchor.set(0, 0.6);
@@ -416,14 +417,14 @@
       fgGraph = r.graph;
       bgGraph = { nodes: [], links: [] };
       updateLayer(fgLayer, fgGraph);
-      updateLayer(bgLayer, bgGraph);
+      updateLayer(bgLayer, bgGraph, true);
     }
     else {
       var r2 = extract_graph(synsets, query, limit, true);
       fgGraph = r.graph;
       bgGraph = r2.graph;
       updateLayer(fgLayer, fgGraph);
-      updateLayer(bgLayer, bgGraph);
+      updateLayer(bgLayer, bgGraph, true);
     }
     setNormalSimulation(fgSimulation, fgGraph);
     setNormalSimulation(bgSimulation, bgGraph);
@@ -447,14 +448,14 @@
       fgGraph = r.graph;
       bgGraph = { nodes: [], links: [] };
       updateLayer(fgLayer, fgGraph);
-      updateLayer(bgLayer, bgGraph);
+      updateLayer(bgLayer, bgGraph, true);
     }
     else {
       var r2 = extract_graph(synsets, query, limit, true);
       fgGraph = r.graph;
       bgGraph = r2.graph;
       updateLayer(fgLayer, fgGraph);
-      updateLayer(bgLayer, bgGraph);
+      updateLayer(bgLayer, bgGraph, true);
     }
     setNormalSimulation(fgSimulation, fgGraph);
     setNormalSimulation(bgSimulation, bgGraph);
