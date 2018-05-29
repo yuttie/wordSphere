@@ -157,6 +157,7 @@
   const bgLayer = new PIXI.Container();
   app.stage.addChild(bgLayer);
   app.stage.addChild(fgLayer);
+  bgLayer.alpha = 0.5;
   bgLayer.filters = [new PIXI.filters.BlurFilter()];
   document.body.insertBefore(app.view, document.body.firstChild);
   window.addEventListener("resize", function() {
