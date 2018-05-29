@@ -472,7 +472,8 @@
     else if (delta < 0) {
       scale += 0.1;
     }
-    forceManyBody.strength(forceManyBody.strength());
+    fgSimulation.forceManyBody.strength(fgSimulation.forceManyBody.strength());
+    bgSimulation.forceManyBody.strength(bgSimulation.forceManyBody.strength());
   }
   document.addEventListener("wheel", on_wheel);
   document.addEventListener("mousewheel", on_wheel);
