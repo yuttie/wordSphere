@@ -23,19 +23,27 @@
           position: relative;
           width: 100%;
           max-width: 25em;
-          bottom: 0;
+          bottom: 2em;
       }
       #query {
           position: relative;
-          background: transparent;
           font-size: 1.5em;
-          background: rgba(252, 252, 252, 0.9);
-          border: 1px solid #e0e0e0;
+          background: rgba(255, 255, 255, 0.5);
+          border: none;
+          border-bottom: 4px solid rgba(200, 200, 200, 0.5);
           padding: 0.2em 0.5em;
+          padding-bottom: 0;
           width: 100%;
           box-sizing: border-box;
           font-family: serif;
           font-weight: bold;
+          color: #aaaaaa;
+          text-shadow: 0px 0px 1px rgba(0, 0, 0, 0.1);
+          transition: all 300ms;
+      }
+      #query:focus {
+          background: rgba(252, 252, 252, 0.9);
+          border-bottom: 4px solid #41d2d3;
           color: #444444;
           text-shadow: 0px 0px 1px rgba(0, 0, 0, 0.3);
       }
