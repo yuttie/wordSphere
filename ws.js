@@ -159,6 +159,8 @@
   app.stage.addChild(fgLayer);
   bgLayer.alpha = 0.5;
   bgLayer.filters = [new PIXI.filters.BlurFilter()];
+  bgLayer.interactive = false;
+  bgLayer.interactiveChildren = false;
   document.body.insertBefore(app.view, document.body.firstChild);
   window.addEventListener("resize", function() {
     let [width, height] = getCanvasSize();
