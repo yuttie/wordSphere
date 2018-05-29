@@ -127,7 +127,7 @@
   const app = new PIXI.Application({
     backgroundColor: 0xffffff,
     antialias: true,
-    resolution: 2,
+    resolution: window.devicePixelRatio,
   });
   app.renderer.autoResize = true;
   app.stage.interactive = true;
