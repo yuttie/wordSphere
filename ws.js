@@ -187,7 +187,7 @@
 
   let grab = null;
   app.stage.on("pointerdown", e => {
-    const initLayerPosition = new PIXI.Point(layer.position.x, layer.position.y);
+    const initLayerPosition = new PIXI.Point(fgLayer.position.x, fgLayer.position.y);
     grab = {
       initLayerPosition: initLayerPosition,
       initPointerPosition: e.data.global.clone(),
@@ -204,8 +204,10 @@
     else if (grab) {
       const dx = grab.data.global.x - grab.initPointerPosition.x;
       const dy = grab.data.global.y - grab.initPointerPosition.y;
-      layer.position.x = grab.initLayerPosition.x + dx;
-      layer.position.y = grab.initLayerPosition.y + dy;
+      fgLayer.position.x = grab.initLayerPosition.x + dx;
+      fgLayer.position.y = grab.initLayerPosition.y + dy;
+      bgLayer.position.x = grab.initLayerPosition.x + dx;
+      bgLayer.position.y = grab.initLayerPosition.y + dy;
     }
   });
   app.stage.on("pointerup", e => {
