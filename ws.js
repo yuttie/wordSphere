@@ -398,7 +398,8 @@
   d3.json(data_name).then(function(data) {
     synsets = data;
 
-    var r = extract_graph(synsets, "", limit);
+    let query = document.querySelector("#query").value;
+    var r = extract_graph(synsets, query, limit);
     if (r.num_synsets_checked < synsets.length) {
       d3.select("#message").text(`(+${limit} synsets found)`);
     }
@@ -406,10 +407,19 @@
       d3.select("#message").text("(" + r.num_synsets_matched + " synsets found)");
     }
 
-    fgGraph = r.graph;
-    bgGraph = { nodes: [], links: [] };
-    updateLayer(fgLayer, fgGraph);
-    updateLayer(bgLayer, bgGraph);
+    if (query == '') {
+      fgGraph = r.graph;
+      bgGraph = { nodes: [], links: [] };
+      updateLayer(fgLayer, fgGraph);
+      updateLayer(bgLayer, bgGraph);
+    }
+    else {
+      var r2 = extract_graph(synsets, query, limit, true);
+      fgGraph = r.graph;
+      bgGraph = r2.graph;
+      updateLayer(fgLayer, fgGraph);
+      updateLayer(bgLayer, bgGraph);
+    }
     setNormalSimulation(fgSimulation, fgGraph);
     setNormalSimulation(bgSimulation, bgGraph);
   });
