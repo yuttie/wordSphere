@@ -24,12 +24,18 @@
       .non-matched {
           fill: #ccc;
       }
-      #control-box {
+      #footer {
           position: absolute;
           bottom: 0;
-          right: 0;
-          margin: 0.25em 0.5em;
+          width: 100%;
+      }
+      #control-box {
+          margin: 0.25em auto;
+          position: relative;
           background: rgba(255, 255, 255, 0.8);
+          width: 100%;
+          max-width: 25em;
+          bottom: 0;
       }
       #query {
           position: relative;
@@ -37,7 +43,8 @@
           font-size: 1.5em;
           border: 1px solid gray;
           padding: 0.2em 0.5em;
-          width: 20em;
+          width: 100%;
+          box-sizing: border-box;
       }
       #message {
           color: gray;
@@ -49,9 +56,11 @@
     </style>
   </head>
   <body>
-    <div id="control-box">
-      <div id="message"></div>
-      <input type="text" id="query" autofocus="autofocus" placeholder="Word to search for..." />
+    <div id="footer">
+      <div id="control-box">
+        <div id="message"></div>
+        <input type="text" id="query" autofocus="autofocus" placeholder="Search" />
+      </div>
     </div>
     <script src="https://d3js.org/d3.v5.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/4.7.1/pixi.min.js"></script>
