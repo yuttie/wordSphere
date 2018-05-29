@@ -2,7 +2,8 @@
   "use strict";
 
   var word_node = {};
-  function extract_graph(synsets, query, max_synsets) {
+  function extract_graph(synsets, query, max_synsets, negate) {
+    negate = !!negate;
     var re = new RegExp(query, "i");
     var count_synsets = 0;
     var graph = { nodes: [], links: [] };
@@ -11,7 +12,7 @@
     for (i = 0; i < synsets.length; ++i) {
       var synset = synsets[i];
       var matched = synset.words.some(function(w) { return re.exec(w); });
-      if (matched) {
+      if (matched != negate) {
         count_synsets += 1;
         var synset_node = {
           id: "synset:" + i,
@@ -105,25 +106,46 @@
   };
   let [width, height] = getCanvasSize();
   let scale = 1.0;
-  let forceLink = d3.forceLink()
+  let fgSimulation = d3.forceSimulation()
+    .alphaTarget(1);
+  fgSimulation.forceLink = d3.forceLink()
     .id(function(d) { return d.id; })
     .distance(50);
-  let forceManyBody = d3.forceManyBody()
+  fgSimulation.forceManyBody = d3.forceManyBody()
     .strength(function() {
       return -(20**scale);
     });
-  let forceCenter = d3.forceCenter(0, 0);
-  let forceX = d3.forceX(0)
+  fgSimulation.forceCenter = d3.forceCenter(0, 0);
+  fgSimulation.forceX = d3.forceX(0)
     .strength(0.04);
-  let forceY = d3.forceY(0)
+  fgSimulation.forceY = d3.forceY(0)
     .strength(0.04);
-  let simulation = d3.forceSimulation()
-    .alphaTarget(1)
-    .force("link", forceLink)
-    .force("charge", forceManyBody)
-    .force("center", forceCenter)
-    .force("x", forceX)
-    .force("y", forceY);
+  fgSimulation
+    .force("link", fgSimulation.forceLink)
+    .force("charge", fgSimulation.forceManyBody)
+    .force("center", fgSimulation.forceCenter)
+    .force("x", fgSimulation.forceX)
+    .force("y", fgSimulation.forceY);
+  let bgSimulation = d3.forceSimulation()
+    .alphaTarget(1);
+  bgSimulation.forceLink = d3.forceLink()
+    .id(function(d) { return d.id; })
+    .distance(50);
+  bgSimulation.forceManyBody = d3.forceManyBody()
+    .strength(function() {
+      return -(20**scale);
+    });
+  bgSimulation.forceCenter = d3.forceCenter(0, 0);
+  bgSimulation.forceX = d3.forceX(0)
+    .strength(0.04);
+  bgSimulation.forceY = d3.forceY(0)
+    .strength(0.04);
+  bgSimulation
+    .force("link", bgSimulation.forceLink)
+    .force("charge", bgSimulation.forceManyBody)
+    .force("center", bgSimulation.forceCenter)
+    .force("x", bgSimulation.forceX)
+    .force("y", bgSimulation.forceY);
   const app = new PIXI.Application({
     backgroundColor: 0xffffff,
     antialias: true,
@@ -131,8 +153,14 @@
   });
   app.renderer.autoResize = true;
   app.stage.interactive = true;
-  const layer = new PIXI.Container();
-  app.stage.addChild(layer);
+  const fgLayer = new PIXI.Container();
+  const bgLayer = new PIXI.Container();
+  app.stage.addChild(bgLayer);
+  app.stage.addChild(fgLayer);
+  bgLayer.alpha = 0.5;
+  bgLayer.filters = [new PIXI.filters.BlurFilter()];
+  bgLayer.interactive = false;
+  bgLayer.interactiveChildren = false;
   document.body.insertBefore(app.view, document.body.firstChild);
   window.addEventListener("resize", function() {
     let [width, height] = getCanvasSize();
@@ -159,7 +187,7 @@
 
   let grab = null;
   app.stage.on("pointerdown", e => {
-    const initLayerPosition = new PIXI.Point(layer.position.x, layer.position.y);
+    const initLayerPosition = new PIXI.Point(fgLayer.position.x, fgLayer.position.y);
     grab = {
       initLayerPosition: initLayerPosition,
       initPointerPosition: e.data.global.clone(),
@@ -176,8 +204,10 @@
     else if (grab) {
       const dx = grab.data.global.x - grab.initPointerPosition.x;
       const dy = grab.data.global.y - grab.initPointerPosition.y;
-      layer.position.x = grab.initLayerPosition.x + dx;
-      layer.position.y = grab.initLayerPosition.y + dy;
+      fgLayer.position.x = grab.initLayerPosition.x + dx;
+      fgLayer.position.y = grab.initLayerPosition.y + dy;
+      bgLayer.position.x = grab.initLayerPosition.x + dx;
+      bgLayer.position.y = grab.initLayerPosition.y + dy;
     }
   });
   app.stage.on("pointerup", e => {
@@ -197,11 +227,10 @@
     grab = null;
   });
 
-  var currentGraph = null;
-  function draw() {
-    if (!currentGraph) return;
-
-    currentGraph.links.forEach(d => {
+  var fgGraph = null;
+  var bgGraph = null;
+  function draw(graph) {
+    graph.links.forEach(d => {
       let line = d.graphics;
       line.clear();
       line.lineStyle(2, 0x888888, 1);
@@ -209,7 +238,7 @@
       line.lineTo(d.target.x, d.target.y);
     });
 
-    currentGraph.nodes.forEach(d => {
+    graph.nodes.forEach(d => {
       let container = d.graphics;
       container.x = d.x;
       container.y = d.y;
@@ -231,9 +260,7 @@
     });
   }
 
-  function update(graph) {
-    currentGraph = graph;
-
+  function updateLayer(layer, graph) {
     layer.removeChildren();
 
     graph.links.forEach(d => {
@@ -277,17 +304,19 @@
       layer.addChild(container);
       d.graphics = container;
     });
+  }
 
-    forceLink.distance(50);
-    forceManyBody.strength(function(d) {
+  function setNormalSimulation(simulation, graph) {
+    simulation.forceLink.distance(50);
+    simulation.forceManyBody.strength(function(d) {
       return -(20**scale);
     });
-    forceX.strength(0.04);
-    forceY.strength(0.04);
+    simulation.forceX.strength(0.04);
+    simulation.forceY.strength(0.04);
 
     simulation
       .nodes(graph.nodes)
-      .on("tick", draw);
+      .on("tick", function() { draw(graph); });
     simulation.force("link")
       .links(graph.links);
   }
@@ -308,21 +337,21 @@
 
   function showMessage(msg) {
     var graph = toGraph(msg);
-    currentGraph = graph;
+    fgGraph = graph;
 
     graph.nodes.forEach(function(d, i) {
       d.x = 100 * i;
       d.y = 100 * (2 * Math.random() - 1);
     });
 
-    layer.removeChildren();
+    fgLayer.removeChildren();
 
     graph.links.forEach(d => {
       let line = new PIXI.Graphics();
       line.lineStyle(2, 0x888888, 1);
       line.moveTo(d.source.x, d.source.y);
       line.lineTo(d.target.x, d.target.y);
-      layer.addChild(line);
+      fgLayer.addChild(line);
       d.graphics = line;
     });
 
@@ -332,7 +361,7 @@
     });
     graph.nodes.forEach(d => {
       let radius = 10 * d.text.length + 10;
-      let fillColor = color(d.id / currentGraph.nodes.length);
+      let fillColor = color(d.id / graph.nodes.length);
       let container = new PIXI.Container();
       let circle = new PIXI.Graphics();
       circle.lineStyle(2, 0xffffff, 1);
@@ -347,25 +376,25 @@
 
       container.x = d.x
       container.y = d.y
-      layer.addChild(container);
+      fgLayer.addChild(container);
       d.graphics = container;
     });
 
-    forceLink.distance(function(l) {
+    fgSimulation.forceLink.distance(function(l) {
       let r1 = 10 * l.source.text.length + 10;
       let r2 = 10 * l.target.text.length + 10;
       return 1.5 * (r1 + r2);
     });
-    forceManyBody.strength(function(d) {
+    fgSimulation.forceManyBody.strength(function(d) {
       return -5 * d.text.length;
     });
-    forceX.strength(0.001);
-    forceY.strength(0.004);
+    fgSimulation.forceX.strength(0.001);
+    fgSimulation.forceY.strength(0.004);
 
-    simulation
+    fgSimulation
       .nodes(graph.nodes)
-      .on("tick", draw);
-    simulation.force("link")
+      .on("tick", function() { draw(graph); });
+    fgSimulation.force("link")
       .links(graph.links);
   }
 
@@ -374,7 +403,8 @@
   d3.json(data_name).then(function(data) {
     synsets = data;
 
-    var r = extract_graph(synsets, "", limit);
+    let query = document.querySelector("#query").value;
+    var r = extract_graph(synsets, query, limit);
     if (r.num_synsets_checked < synsets.length) {
       d3.select("#message").text(`(+${limit} synsets found)`);
     }
@@ -382,7 +412,21 @@
       d3.select("#message").text("(" + r.num_synsets_matched + " synsets found)");
     }
 
-    update(r.graph);
+    if (query == '') {
+      fgGraph = r.graph;
+      bgGraph = { nodes: [], links: [] };
+      updateLayer(fgLayer, fgGraph);
+      updateLayer(bgLayer, bgGraph);
+    }
+    else {
+      var r2 = extract_graph(synsets, query, limit, true);
+      fgGraph = r.graph;
+      bgGraph = r2.graph;
+      updateLayer(fgLayer, fgGraph);
+      updateLayer(bgLayer, bgGraph);
+    }
+    setNormalSimulation(fgSimulation, fgGraph);
+    setNormalSimulation(bgSimulation, bgGraph);
   });
 
   document.addEventListener("keydown", function() {
@@ -399,7 +443,21 @@
       d3.select("#message").text("(" + r.num_synsets_matched + " synsets found)");
     }
 
-    update(r.graph);
+    if (query == '') {
+      fgGraph = r.graph;
+      bgGraph = { nodes: [], links: [] };
+      updateLayer(fgLayer, fgGraph);
+      updateLayer(bgLayer, bgGraph);
+    }
+    else {
+      var r2 = extract_graph(synsets, query, limit, true);
+      fgGraph = r.graph;
+      bgGraph = r2.graph;
+      updateLayer(fgLayer, fgGraph);
+      updateLayer(bgLayer, bgGraph);
+    }
+    setNormalSimulation(fgSimulation, fgGraph);
+    setNormalSimulation(bgSimulation, bgGraph);
   });
 
   function on_wheel(e) {
